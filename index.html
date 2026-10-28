@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prototype — Combo MSME LPBank trên iPTI</title>
+<style>
+
+:root{
+  --orange:#F2942B; --orange-dark:#DD8420; --orange-soft:#FDF3E7;
+  --navy:#12386B; --navy-soft:#EAF1F9;
+  --blue:#1B72C4; --blue-soft:#EAF3FB;
+  --ink:#1F2733; --ink-2:#5A6675; --ink-3:#8D97A5;
+  --line:#E3E7ED; --line-2:#D3D9E2;
+  --bg:#F4F6F8; --white:#fff;
+  --green:#1F9254; --green-soft:#E9F7EF;
+  --red:#D64545; --red-soft:#FDECEC;
+  --amber:#B7791F; --amber-soft:#FDF6E3;
+  --r:8px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);
+  font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,"Inter","Helvetica Neue",Arial,sans-serif;
+  font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;font-size:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;font-size:inherit}
+a{color:var(--blue);text-decoration:none;cursor:pointer}
+
+/* ============ PROTOTYPE CHROME ============ */
+#protobar{position:sticky;top:0;z-index:900;background:#101826;color:#fff;
+  display:flex;align-items:center;gap:14px;padding:8px 14px;flex-wrap:wrap;font-size:12.5px}
+#protobar .pb-t{font-weight:700;letter-spacing:.02em;margin-right:4px}
+#protobar .pb-t span{color:var(--orange)}
+.pb-nav{display:flex;gap:5px;flex-wrap:wrap}
+.pb-nav button{background:#1D293B;border:1px solid #2C3B52;color:#C6D0DE;border-radius:20px;
+  padding:4px 11px;font-size:12px;white-space:nowrap}
+.pb-nav button:hover{background:#26364F;color:#fff}
+.pb-nav button.on{background:var(--orange);border-color:var(--orange);color:#101826;font-weight:600}
+.pb-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.pb-toggle{display:flex;align-items:center;gap:6px;color:#C6D0DE;cursor:pointer;user-select:none}
+.pb-toggle input{accent-color:var(--orange)}
+.pb-role{display:flex;background:#1D293B;border:1px solid #2C3B52;border-radius:20px;overflow:hidden}
+.pb-role button{background:transparent;border:0;color:#C6D0DE;padding:4px 12px;font-size:12px;border-radius:0}
+.pb-role button.on{background:#3B6FB5;color:#fff;font-weight:600}
+
+/* ============ APP SHELL ============ */
+.app{display:flex;min-height:calc(100vh - 40px)}
+.side{width:56px;background:#fff;border-right:1px solid var(--line);padding:14px 0;
+  display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0}
+.logo{font-weight:800;font-size:19px;color:var(--orange);letter-spacing:-.04em;margin-bottom:18px}
+.sic{width:34px;height:34px;border-radius:7px;display:flex;align-items:center;justify-content:center;
+  color:var(--ink-3);cursor:pointer}
+.sic:hover{background:var(--bg)}
+.sic.on{background:var(--blue-soft);color:var(--blue)}
+.sic svg{width:19px;height:19px}
+.side .grow{flex:1}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{display:flex;align-items:flex-start;padding:14px 26px 0}
+.crumb{color:var(--ink-3);font-size:13px}
+.crumb b{color:var(--ink);font-weight:400}
+.h1{font-size:21px;font-weight:700;margin:4px 0 0}
+.user{margin-left:auto;display:flex;align-items:center;gap:9px;color:var(--ink-2);font-size:13.5px}
+.avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#8E5AA8,#C77FA8)}
+.content{padding:16px 26px 40px;flex:1}
+.card{background:#fff;border-radius:10px;padding:22px 24px;box-shadow:0 1px 2px rgba(16,24,38,.05)}
+
+/* stepper */
+.steps{display:flex;align-items:center;padding:6px 0 22px}
+.step{display:flex;align-items:center;gap:9px;color:var(--ink-3);font-size:14px;white-space:nowrap}
+.step .n{width:24px;height:24px;border-radius:50%;background:#E7EAF0;color:#7B8798;
+  display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:600}
+.step.on{color:var(--ink);font-weight:600}
+.step.on .n{background:var(--navy);color:#fff}
+.step.done .n{background:#fff;color:var(--navy);border:0}
+.step.done{color:var(--ink-2)}
+.step-line{flex:1;height:1px;background:var(--line-2);margin:0 14px}
+.step-line.done{background:var(--navy)}
+
+/* layout helpers */
+.row{display:flex;gap:20px;align-items:flex-start}
+.col{flex:1;min-width:0}
+.grid{display:grid;gap:16px 20px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g5{grid-template-columns:repeat(5,1fr)}
+@media(max-width:1350px){.g5{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:1200px){.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:repeat(2,1fr)}}
+.sec-t{font-size:15px;font-weight:700;margin:22px 0 14px}
+.sec-t:first-child{margin-top:0}
+.hr{height:1px;background:var(--line);margin:22px 0}
+
+/* form */
+.f{display:flex;flex-direction:column;gap:6px}
+.f label{font-size:13px;color:var(--ink-2);font-weight:500}
+.f label .req{color:var(--red);margin-right:3px}
+.ctl{height:38px;border:1px solid var(--line-2);border-radius:6px;padding:0 11px;background:#fff;
+  color:var(--ink);width:100%;outline:none}
+.ctl::placeholder{color:#B4BCC8}
+.ctl:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(27,114,196,.12)}
+.ctl[disabled],.ctl[readonly]{background:#F5F7F9;color:var(--ink-2);cursor:not-allowed}
+select.ctl{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238D97A5' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat:no-repeat;background-position:right 9px center;background-size:15px;padding-right:30px}
+.hint{font-size:12px;color:var(--ink-3);display:flex;gap:5px;align-items:flex-start}
+.hint svg{width:13px;height:13px;flex-shrink:0;margin-top:2px}
+.err{font-size:12px;color:var(--red)}
+.ro{font-size:14px;color:var(--ink);font-weight:600}
+.ro-l{font-size:12.5px;color:var(--ink-3)}
+
+/* buttons */
+.btn{height:38px;padding:0 20px;border-radius:6px;border:1px solid transparent;font-weight:600;
+  display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.btn-pri{background:var(--orange);color:#fff}
+.btn-pri:hover{background:var(--orange-dark)}
+.btn-pri[disabled]{background:#EBD3B4;cursor:not-allowed}
+.btn-sec{background:#fff;border-color:var(--orange);color:var(--orange)}
+.btn-sec:hover{background:var(--orange-soft)}
+.btn-gh{background:#fff;border-color:var(--line-2);color:var(--ink-2)}
+.btn-gh:hover{border-color:var(--ink-3)}
+.btn-dan{background:#fff;border-color:var(--red);color:var(--red)}
+.btn-dan:hover{background:var(--red-soft)}
+.btn-ok{background:var(--green);color:#fff}
+.btn-sm{height:32px;padding:0 14px;font-size:13px}
+.btn-link{background:none;border:0;color:var(--blue);padding:0;font-weight:500}
+.footbar{display:flex;justify-content:flex-end;gap:10px;padding:16px 26px;background:#fff;
+  border-top:1px solid var(--line);position:sticky;bottom:0;margin:22px -24px -22px;border-radius:0 0 10px 10px}
+
+/* checkbox / radio */
+.chk,.rad{display:flex;gap:9px;align-items:flex-start;cursor:pointer;font-size:13.5px;color:var(--ink)}
+.chk input,.rad input{margin:2px 0 0;accent-color:var(--blue);width:15px;height:15px;flex-shrink:0}
+.radline{display:flex;gap:22px;align-items:center}
+
+/* person block */
+.person{border:1px solid var(--line);border-radius:9px;margin-bottom:14px;overflow:hidden}
+.person-h{display:flex;align-items:center;gap:10px;padding:11px 16px;background:#FAFBFC;
+  border-bottom:1px solid var(--line);cursor:pointer}
+.person-h .t{font-weight:600}
+.person-h .age{font-size:12px;color:var(--ink-2);background:var(--navy-soft);padding:2px 8px;border-radius:11px}
+.person-b{padding:18px 16px}
+.ocr{border:1.5px dashed var(--blue);border-radius:7px;background:#F8FBFE;color:var(--blue);
+  padding:11px;display:flex;align-items:center;justify-content:center;gap:9px;font-size:13.5px;
+  cursor:pointer;margin-bottom:16px}
+.ocr:hover{background:var(--blue-soft)}
+.benwho{margin-bottom:18px}
+.benwho-t{font-weight:600;color:var(--ink);font-size:13px;margin-bottom:10px}
+.benwho .rad{display:inline-flex;align-items:center;gap:8px;margin-right:32px}
+.divider-txt{display:flex;align-items:center;gap:12px;color:var(--ink-3);font-size:12.5px;margin:0 0 16px}
+.divider-txt:before,.divider-txt:after{content:"";flex:1;height:1px;background:var(--line)}
+
+/* fee panel */
+.feepanel{width:370px;flex-shrink:0;border:1px solid var(--line);border-radius:9px;padding:18px 18px 16px;
+  align-self:flex-start;position:sticky;top:calc(var(--pbh,56px) + 14px);max-height:calc(100vh - var(--pbh,56px) - 30px);overflow:auto;background:#fff}
+.feepanel h4{margin:0 0 12px;padding-bottom:12px;border-bottom:1px solid var(--line);font-size:15px;font-weight:700}
+.fee-r{display:flex;justify-content:space-between;gap:10px;padding:6px 0;font-size:13.5px}
+.fee-r .k{color:var(--ink-2)}
+.fee-r .v{font-weight:600;color:var(--navy)}
+.fee-r.tot .k{color:var(--ink);font-weight:600}
+.fee-r.tot .v{color:var(--orange);font-weight:700;font-size:15px}
+.fee-r.sub{padding-left:12px}
+.fee-r.sub .k{color:var(--ink-3);font-size:13px}
+.fee-r.sub .v{font-weight:500;font-size:13px}
+.fee-r.comm .k{color:var(--ink-2);font-weight:500}
+.fee-r.comm .v{color:var(--navy);font-weight:600}
+.masked{letter-spacing:2px;color:var(--navy)}
+.fee-r.cust .k{color:var(--ink-2);font-weight:500}
+.fee-r.cust .v{color:var(--navy);font-weight:700}
+.fee-r .v{white-space:nowrap}
+.fee-gap{height:10px}
+.fee-hr{height:1px;background:var(--line);margin:10px 0}
+
+/* tags */
+.tag{display:inline-flex;align-items:center;padding:2px 9px;border-radius:4px;font-size:12px;
+  font-weight:500;border:1px solid;white-space:nowrap}
+.t-gray{background:#F1F3F6;border-color:#DDE2E9;color:#5A6675}
+.t-green{background:var(--green-soft);border-color:#B9E5CB;color:var(--green)}
+.t-red{background:var(--red-soft);border-color:#F5C6C6;color:var(--red)}
+.t-amber{background:var(--amber-soft);border-color:#EDD9A3;color:var(--amber)}
+.t-blue{background:var(--blue-soft);border-color:#BDDAF3;color:var(--blue)}
+.t-navy{background:var(--navy-soft);border-color:#C3D6EC;color:var(--navy)}
+
+/* table */
+table.tb{width:100%;border-collapse:collapse;font-size:13.5px}
+table.tb th{background:#F7F8FA;text-align:left;padding:11px 12px;font-weight:600;color:var(--ink-2);
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);white-space:nowrap}
+table.tb td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+table.tb tr.hl td{background:#FFFBF3}
+table.tb .id{color:var(--blue);font-weight:600;cursor:pointer}
+.acts{display:flex;gap:6px;color:var(--ink-3)}
+.acts .act{position:relative;display:inline-flex;padding:5px;border-radius:6px;cursor:pointer}
+.acts .act:hover{background:var(--bg);color:var(--blue)}
+.acts .act.off{opacity:.35;cursor:not-allowed}
+.acts .act.off:hover{background:none;color:var(--ink-3)}
+.acts .act.a-ok:hover{color:var(--green)}
+.acts svg{width:17px;height:17px}
+.acts .tip{position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);
+  background:#1F2733;color:#fff;font-size:12px;font-weight:500;padding:4px 9px;border-radius:6px;
+  white-space:nowrap;opacity:0;pointer-events:none;transition:.12s;z-index:5}
+.acts .act:hover .tip{opacity:1}
+
+/* package cards */
+.pkgs{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:1250px){.pkgs{grid-template-columns:repeat(2,1fr)}}
+.pkg{border:1.5px solid var(--line-2);border-radius:9px;padding:14px;cursor:pointer;background:#fff;
+  transition:.12s;position:relative}
+.pkg:hover{border-color:#A9C4E4}
+.pkg.on{border-color:var(--orange);background:#FFFDF9;box-shadow:0 0 0 2px rgba(242,148,43,.13)}
+.pkg .pname{font-weight:700;font-size:14.5px;display:flex;align-items:center;gap:7px}
+.pkg .pcode{font-size:11px;color:var(--ink-3);font-weight:400}
+.pkg .stbh{font-size:17px;font-weight:700;color:var(--navy);margin:9px 0 2px}
+.pkg .stbh-l{font-size:11.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em}
+.pkg .pfee{margin-top:11px;padding-top:10px;border-top:1px dashed var(--line-2);font-size:12.5px;color:var(--ink-2)}
+.pkg .pfee b{color:var(--orange);font-size:14px}
+.chipben{display:inline-block;background:var(--blue-soft);color:var(--blue);border-radius:5px;
+  padding:6px 11px;font-size:13px;margin:0 8px 8px 0}
+
+/* accordion review */
+.acc{border:1px solid var(--line);border-radius:8px;margin-bottom:12px;overflow:hidden}
+.acc-h{display:flex;align-items:center;gap:9px;padding:11px 15px;background:#F7F8FA;cursor:pointer;font-weight:600}
+.acc-b{padding:16px 15px}
+.acc.closed .acc-b{display:none}
+.acc.closed .acc-h svg{transform:rotate(-90deg)}
+.acc-h svg{width:15px;height:15px;color:var(--ink-2);transition:.15s}
+
+/* modal */
+.mask{position:fixed;inset:0;background:rgba(16,24,38,.45);display:flex;align-items:center;
+  justify-content:center;z-index:950;padding:20px;overflow:auto}
+.mask>.modal{margin:auto}
+.modal{background:#fff;border-radius:11px;width:100%;max-width:520px;max-height:88vh;overflow:auto;
+  box-shadow:0 18px 50px rgba(16,24,38,.25)}
+.modal-h{display:flex;align-items:center;padding:16px 20px 0;font-size:16px;font-weight:700}
+.modal-h .x{margin-left:auto;color:var(--ink-3);cursor:pointer;font-size:20px;line-height:1}
+.modal-b{padding:14px 20px}
+.modal-f{display:flex;justify-content:flex-end;gap:10px;padding:8px 20px 20px}
+/* modal biến thể canh giữa — theo design system pop-up của iPTI */
+#mBro .m-top{padding:14px 18px;border-bottom:1px solid var(--line);font-size:14.5px}
+#mBro .m-top .x{width:34px;height:34px;flex-shrink:0;border-radius:8px;border:1px solid var(--line);
+  color:var(--ink-2);font-size:22px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#mBro .m-top .x:hover{background:var(--red-soft);border-color:#F0B9B9;color:#C0392B}
+.m-center .m-top{display:flex;justify-content:flex-end;padding:14px 18px;border-bottom:1px solid var(--line)}
+.m-center .m-top .x{color:var(--ink-2);cursor:pointer;font-size:24px;line-height:1}
+.m-center .m-body{padding:26px 44px 30px;text-align:center}
+.m-center .m-illu{width:200px;height:130px;display:block;margin:0 auto 6px}
+.m-center .m-title{font-size:21px;font-weight:700;margin-bottom:14px}
+.m-center .m-text{margin:0;color:var(--ink-2);line-height:1.65}
+.m-center .m-text b{color:var(--ink)}
+.optwrap{padding:4px 26px 24px;display:flex;flex-direction:column;gap:10px}
+.optcard{display:flex;align-items:center;gap:13px;text-align:left;border:1.5px solid var(--line);
+  border-radius:10px;padding:14px 16px;cursor:pointer;background:#fff;transition:.15s}
+.optcard:hover{border-color:var(--blue);background:#F8FBFE}
+.optcard.reco{border-color:var(--orange);background:#FFFBF6}
+.optcard.reco:hover{background:#FFF4E8}
+.optcard .ic{width:38px;height:38px;flex-shrink:0;border-radius:9px;background:var(--blue-soft);color:var(--blue);
+  display:flex;align-items:center;justify-content:center}
+.optcard.reco .ic{background:#FDEBD8;color:var(--orange)}
+.optcard .ic svg{width:19px;height:19px}
+.optcard .tx{flex:1;min-width:0}
+.m-back{display:inline-flex;align-items:center;gap:4px;align-self:center;margin-top:4px;padding:6px 4px;
+  color:var(--blue);font-size:13.5px;font-weight:600;cursor:pointer}
+.m-back:hover{text-decoration:underline}
+.m-back svg{width:15px;height:15px}
+.optcard .tx b{display:block;font-size:14px;color:var(--ink)}
+.optcard .tx span{display:block;font-size:12.5px;color:var(--ink-2);line-height:1.5}
+.optcard .ar{width:17px;height:17px;flex-shrink:0;color:var(--ink-3)}
+.optcard:hover .ar{color:var(--blue)}
+.optcard.reco:hover .ar{color:var(--orange)}
+.m-center .modal-f{border-top:1px solid var(--line);padding:16px 20px;justify-content:center}
+.m-center .m-text .m-link{font-weight:700}
+.doclinks{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:18px}
+.doclinks a{display:inline-flex;align-items:center;gap:7px;font-weight:500}
+.doclinks svg{width:15px;height:15px}
+
+/* misc */
+.errbox{display:flex;gap:10px;background:var(--red-soft);border:1px solid #F5C6C6;border-radius:7px;
+  padding:13px 15px;font-size:13px;color:#8E2A2A}
+.errbox svg{width:17px;height:17px;flex-shrink:0;color:var(--red);margin-top:1px}
+.warn{display:flex;gap:10px;background:#FFFBEF;border:1px solid #F3E2B5;border-radius:7px;padding:13px 15px;font-size:13px;color:#6B5312}
+.warn svg{width:17px;height:17px;flex-shrink:0;color:var(--amber);margin-top:1px}
+.okbox{display:flex;gap:10px;background:var(--green-soft);border:1px solid #B9E5CB;border-radius:7px;padding:13px 15px;font-size:13px;color:#14603A}
+.otp{display:flex;gap:9px}
+.otp input{width:44px;height:50px;text-align:center;font-size:20px;font-weight:700;border:1px solid var(--line-2);border-radius:7px;outline:none}
+.otp input:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(27,114,196,.12)}
+.screen{display:none}
+.screen.on{display:block}
+.kv{display:flex;flex-direction:column;gap:3px}
+.kv .k{font-size:12.5px;color:var(--ink-3)}
+.kv .v{font-weight:600}
+.qcard{border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-bottom:12px}
+.qcard .qt{font-weight:700;font-size:13.5px;margin-bottom:7px}
+.qcard .qcode{font-weight:400;font-size:11.5px;color:var(--ink-3);margin-left:6px}
+.qcard .qq{font-size:13px;color:var(--ink-2);line-height:1.6}
+.qcard .qlist{margin:9px 0 0;padding-left:18px;font-size:12.5px;color:var(--ink-2);line-height:1.75}
+.qcard .qlist li{margin-bottom:2px}
+.qcard .declink{display:inline-block;margin-top:10px;font-size:13px;font-weight:500}
+.dnote{font-size:12.5px;color:var(--ink-3);line-height:1.6;margin:10px 0 8px}
+.poschip{display:inline-flex;align-items:center;gap:8px;background:var(--blue-soft);color:var(--blue);
+  border-radius:6px;padding:6px 11px;font-size:13px;font-weight:500}
+.poschip .rm{cursor:pointer;font-size:15px;line-height:1;opacity:.7}
+.poschip .rm:hover{opacity:1}
+.exclbox{background:#F7F8FA;border-radius:8px;padding:14px 16px;margin-top:12px}
+.exclbox .t{font-size:13px;font-weight:700;margin-bottom:8px}
+.exclbox ul,.exclbox ol{margin:6px 0 0;padding-left:20px;font-size:13px;color:var(--ink-2);line-height:1.8}
+.exclbox .t{font-size:12.5px;font-weight:600;color:var(--ink-2)}
+.posgrp{border-bottom:1px solid var(--line);padding:12px 0}
+.posgrp .g{font-weight:600;font-size:13.5px;margin-bottom:8px}
+.posgrp .items{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 16px}
+.note{font-size:13px;color:var(--ink-3);line-height:1.6;margin-bottom:16px;max-width:900px}
+.tabchips{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.tabchip{border:1px solid var(--line-2);background:#fff;border-radius:20px;padding:5px 15px;font-size:13px;color:var(--ink-2)}
+.tabchip.on{background:var(--blue-soft);border-color:#9FC7EC;color:var(--blue);font-weight:600}
+/* ===== màn khách hàng xác nhận e-consent (mô phỏng mobile) ===== */
+.ec-wrap{display:flex;justify-content:center;padding:4px 0 10px}
+.phone{width:392px;background:#fff;border:9px solid #1B2430;border-radius:32px;overflow:hidden;
+  box-shadow:0 18px 50px rgba(16,24,38,.22)}
+.ph-status{display:flex;justify-content:space-between;padding:9px 20px 3px;font-size:12px;font-weight:600}
+.ph-nav{display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid var(--line);
+  font-size:13.5px;font-weight:600}
+.ph-body{height:600px;overflow:auto;background:#fff}
+.ec-hero{background:linear-gradient(180deg,#0E3164,#164A8E);padding:20px 18px 22px;text-align:center;color:#fff}
+.ec-logo{display:flex;align-items:center;justify-content:center;gap:10px}
+.ec-logo .mark{font-size:26px;font-weight:800;letter-spacing:-.04em;color:#fff}
+.ec-logo .mark span{color:var(--orange)}
+.ec-logo .w{text-align:left;font-size:10.5px;line-height:1.35;font-weight:600}
+.ec-logo .w b{display:block;color:var(--orange)}
+.ec-hero .sub{margin-top:12px;font-size:11px;letter-spacing:.16em;font-weight:700;opacity:.9}
+.ec-sec{padding:20px 18px}
+.ec-sec .t{font-size:14px;color:var(--ink-2);text-align:center}
+.ec-prod{font-size:18px;font-weight:700;color:var(--orange);text-align:center;margin:6px 0 14px}
+.ec-lead{font-size:13px;color:var(--ink-2);line-height:1.6}
+.ec-doc{border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:12px}
+.ec-doc-h{background:#F4F7FB;padding:9px 12px;font-size:11.5px;font-weight:700;color:var(--navy);
+  text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid var(--line)}
+.ec-doc-b{padding:11px 12px;font-size:11.5px;color:var(--ink-2)}
+.ec-doc-b .r{display:flex;gap:8px;padding:3px 0}
+.ec-doc-b .r span:first-child{width:44%;color:var(--ink-3);flex-shrink:0}
+.ec-doc-b .r span:last-child{font-weight:600;color:var(--ink)}
+.ec-doc-f{border-top:1px dashed var(--line-2);padding:9px 12px}
+.ec-term{display:flex;gap:10px;align-items:flex-start;padding:11px 0;font-size:12.5px;line-height:1.6;color:var(--ink-2)}
+.ec-term input{margin:2px 0 0;width:16px;height:16px;flex-shrink:0;accent-color:var(--blue)}
+.ec-deadline{font-size:12.5px;color:var(--ink-2);line-height:1.6;margin-top:16px}
+.ec-cta{display:flex;flex-direction:column;gap:9px;margin-top:16px}
+.ec-cta .btn{width:100%}
+.ec-ok{display:flex;gap:9px;background:var(--green-soft);border:1px solid #B9E5CB;border-radius:7px;
+  padding:11px 13px;font-size:12.5px;color:#14603A;line-height:1.55;margin-top:16px}
+.ec-bad{display:flex;gap:9px;background:var(--red-soft);border:1px solid #F5C6C6;border-radius:7px;
+  padding:11px 13px;font-size:12.5px;color:#8E2A2A;line-height:1.55;margin-top:16px}
+
+/* ===== MÀN LOGIN / TRANG CHỦ (full-bleed) ===== */
+.app.plain .side,.app.plain .topbar{display:none}
+.app.plain .content{padding:0}
+.vs-top{background:#fff;border-bottom:1px solid #E3E8EF;padding:10px 22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.vs-logo{display:flex;align-items:center;gap:9px}
+.vs-logo .mark{width:34px;height:34px;border-radius:50%;border:3px solid #0B63B0;border-top-color:var(--orange);border-right-color:var(--orange);transform:rotate(-35deg)}
+.vs-logo .tx b{display:block;font-size:19px;color:#0B63B0;letter-spacing:.04em;line-height:1}
+.vs-logo .tx i{font-style:normal;font-size:8.5px;color:#0B63B0;letter-spacing:.06em}
+.vs-nav{display:flex;gap:22px;align-items:center;font-size:12.5px;font-weight:700;color:#3C4757;letter-spacing:.02em}
+.vs-nav .it{cursor:pointer;white-space:nowrap}
+.vs-nav .it:hover,.vs-nav .it.act{color:var(--orange)}
+.vs-body{background:#0B63B0;min-height:560px;display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:20px;padding:40px 30px}
+.vs-login{max-width:380px;margin:0 auto;width:100%}
+.vs-login h3{color:#fff;font-weight:500;font-size:21px;text-align:center;margin-bottom:26px}
+.vs-in{width:100%;background:#E8EEF7;border:none;border-radius:4px;padding:12px 14px;font-size:14px;color:#2B3442;margin-bottom:14px}
+.vs-btn{width:100%;background:linear-gradient(90deg,#1C7FD6,#0A5AA5);color:#fff;border-radius:26px;padding:13px;font-size:15px;font-weight:600;letter-spacing:.06em}
+.vs-link{display:block;text-align:center;color:#fff;font-size:12.5px;margin-top:16px;text-decoration:underline}
+.vs-art{display:flex;justify-content:center}
+.vs-foot{background:#0B63B0;color:#CFE2F5;text-align:center;font-size:12px;padding:14px;border-top:1px solid rgba(255,255,255,.14);position:relative}
+.vs-ver{position:absolute;right:0;bottom:0;background:var(--orange);color:#fff;font-size:12px;padding:7px 16px}
+/* trang chủ V-SIS */
+.vs-home{background:#EDEFF2;min-height:560px;padding:26px 22px 40px}
+.vs-kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;max-width:1160px;margin:0 auto 22px}
+.vs-kpi .c{background:#fff;border-radius:3px;padding:20px;display:flex;align-items:center;gap:16px;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.vs-kpi .c svg{width:32px;height:32px;flex:0 0 32px}
+.vs-kpi .c .r{flex:1;text-align:right}
+.vs-kpi .c .r span{display:block;font-size:13px;color:#4A5563;margin-bottom:6px}
+.vs-kpi .c .r b{font-size:22px;color:#2B3442}
+.vs-tabs{display:flex;max-width:1160px;margin:0 auto 14px}
+.vs-tabs button{font-size:11.5px;font-weight:700;letter-spacing:.04em;padding:11px 18px;border-radius:3px}
+.vs-tabs button.on{background:#1479C4;color:#fff}
+.vs-tabs button.off{background:#fff;color:var(--orange)}
+.vs-chart{background:#fff;border-radius:3px;max-width:1160px;margin:0 auto;padding:26px;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.vs-chart .ct{font-size:19px;color:#333;margin-bottom:18px}
+.vs-chart .ct b{color:#C0392B;font-weight:400}
+.vs-dd{position:relative}
+.vs-menu{position:absolute;top:28px;right:-10px;background:#1479C4;border-radius:3px;min-width:250px;padding:8px 0;z-index:30;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.vs-menu:before{content:'';position:absolute;top:-7px;right:44px;border:7px solid transparent;border-top:0;border-bottom-color:#1479C4}
+.vs-menu div{padding:10px 20px;color:#fff;font-size:13.5px;font-weight:400;letter-spacing:0;cursor:pointer;white-space:nowrap}
+.vs-menu div:hover{background:#0F65A8}
+.vs-menu div.hot{color:#FFD9A8;font-weight:700}
+/* iPTI login */
+.ip-wrap{background:#fff;min-height:600px;display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:center;padding:34px}
+.ip-form{max-width:340px;margin:0 auto;width:100%}
+.ip-logo{text-align:center;font-family:Georgia,serif;font-size:44px;font-weight:700;color:#1B4C96;letter-spacing:-.02em;margin-bottom:10px}
+.ip-logo span{color:var(--orange)}
+.ip-form h3{text-align:center;font-size:22px;color:#1B2433;margin-bottom:26px}
+.ip-row{display:flex;align-items:center;justify-content:space-between;margin:14px 0 20px;font-size:12.5px}
+.ip-row label{display:flex;align-items:center;gap:8px;color:#4A5563}
+.ip-row a{color:var(--blue);text-decoration:none}
+.ip-btn{width:100%;background:var(--orange);color:#fff;border-radius:6px;padding:12px;font-size:14.5px;font-weight:600}
+.ip-hero{background:linear-gradient(150deg,#123E86,#0B2C63);border-radius:18px;padding:40px 30px;text-align:center;position:relative;min-height:470px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+.ip-hero h4{color:#fff;font-size:26px}
+.ip-hero p{color:#C5D6F2;font-size:14px}
+.ip-arr{position:absolute;bottom:26px;width:38px;height:38px;border-radius:50%;background:#2563C9;color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer}
+@media(max-width:900px){.vs-body,.ip-wrap{grid-template-columns:1fr}.vs-art{display:none}.vs-kpi{grid-template-columns:repeat(2,1fr)}}
+.benbox{border:1px solid var(--line);border-radius:9px;padding:16px 18px;margin-bottom:14px;background:#fff}
+.benbox-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.benbox-h b{font-size:13.5px;color:var(--ink)}
+.bentb-del{width:28px;height:28px;border:0;background:transparent;border-radius:7px;color:#9AA4B2;font-size:15px;
+  display:flex;align-items:center;justify-content:center}
+.bentb-del:hover{color:#C0392B}
+.benwho{display:flex;flex-wrap:wrap;gap:0 32px;margin-bottom:14px}
+.benwho .rad{display:inline-flex;align-items:center;gap:8px}
+.benwho .rad.off{opacity:.45;cursor:not-allowed}
+.benself{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 20px;background:#F7F9FC;border-radius:8px;padding:12px 14px;margin-bottom:16px}
+.benself .k{display:block;font-size:12px;color:var(--ink-2);margin-bottom:3px}
+.benself .v{font-weight:600;font-size:13.5px}
+.bentb-f{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.btn-doc{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:#fff;
+  color:var(--blue);border-radius:7px;padding:7px 13px;font-size:13px;font-weight:500;line-height:1;white-space:nowrap}
+.btn-doc svg{width:15px;height:15px;flex-shrink:0}
+.btn-doc:hover{background:var(--blue-soft);border-color:var(--blue)}
+.btn-ghost{border:1px dashed var(--blue);color:var(--blue);border-radius:7px;padding:8px 14px;font-size:13px;background:#F8FBFE}
+.bensum{font-size:13px;font-weight:600}
+.bensum.ok{color:#1F8B4C}.bensum.bad{color:#C0392B}
+.bentb{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.bentb-h,.bentb-r{display:grid;grid-template-columns:160px 190px 170px 1fr 80px;gap:12px;align-items:center;padding:10px 14px;font-size:13px}
+.bentb-h{background:#F6F8FA;font-size:12px;color:var(--ink-2);font-weight:600}
+.bentb-r{border-top:1px solid var(--line);color:var(--ink-2)}
+.bentb-r b{color:var(--ink);font-weight:600}
+.warnbox{display:flex;gap:12px;background:#FFF8EC;border:1px solid #F3D9A8;border-radius:10px;padding:16px 18px;max-width:960px}
+.warnbox>svg{width:20px;height:20px;flex-shrink:0;color:#B8761A;margin-top:1px}
+.warnbox>div>b{font-size:13.5px;color:#7A4E10;display:block;margin-bottom:8px}
+.warnbox li b{color:#5C3F0C}
+.warnbox ol{margin:0;padding-left:20px;font-size:13px;color:#6B4A14;line-height:1.8}
+.warnbox>div>span{display:block;margin-top:9px;font-size:12.5px;color:#9A7230}
+.quote{margin-top:16px}
+.quote-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.quote-h b{font-size:13.5px;color:var(--ink)}
+.quote-h span{font-size:12.5px;color:var(--ink-2)}
+.quote-g{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.qcard-f{border:1px solid var(--line);border-radius:9px;padding:12px 14px;background:#FAFBFD}
+.qcard-f .nm{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:9px}
+.qcard-f .nm span{font-weight:600;color:var(--ink-2);margin-left:10px;padding-left:10px;border-left:1px solid var(--line)}
+.qcard-f .lb{font-size:11.5px;color:var(--ink-3)}
+.qcard-f .fv{font-size:15.5px;font-weight:700;color:var(--orange)}
+@media(max-width:1100px){.quote-g{grid-template-columns:repeat(2,1fr)}}
+/* panel phí tham khảo màn 1 */
+.qp-r{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px dashed var(--line)}
+.qp-r:last-of-type{border-bottom:0;padding-bottom:2px}
+.qp-nm{font-size:13.5px;font-weight:700;color:var(--ink);line-height:1.3}
+.qp-nm span{display:block;font-weight:500;color:var(--ink-3);font-size:11.5px;margin-top:3px}
+.qp-fv{font-size:15px;font-weight:700;color:var(--orange);white-space:nowrap}
+.qp-empty{display:flex;gap:8px;font-size:12.5px;color:var(--ink-3);line-height:1.55;padding:2px 0 4px}
+.qp-empty svg{width:15px;height:15px;flex-shrink:0;margin-top:1px}
+.qp-empty.bad{color:var(--red)}
+.qp-note{margin-top:15px;padding-top:14px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink-2);line-height:1.55}
+.qp-note b{display:block;color:var(--ink);margin-bottom:7px;font-size:12.5px}
+.qp-note ol{margin:0;padding-left:17px}
+.qp-note li{margin-bottom:5px}
+.qp-note li:last-child{margin-bottom:0}
+.filters{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+.filters.f3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:1000px){.filters{grid-template-columns:repeat(2,1fr)}}
+
+/* ===== bổ sung cho Combo MSME ===== */
+.blk{border:1px solid var(--line);border-radius:10px;margin-bottom:16px;overflow:hidden}
+.blk-h{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#FAFBFC;border-bottom:1px solid var(--line);font-weight:700}
+.blk-h .ic{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.blk-h .ic.ts{background:var(--orange-soft);color:var(--orange)}
+.blk-h .ic.cn{background:var(--blue-soft);color:var(--blue)}
+.blk-h .sub{font-weight:400;font-size:12.5px;color:var(--ink-3)}
+.blk-b{padding:16px}
+.photos{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+.ph{width:112px;height:84px;border-radius:7px;position:relative;overflow:hidden;color:#fff;font-size:11px;font-weight:600;
+  display:flex;align-items:flex-end;padding:6px;background-size:cover;background-position:center}
+.ph .src{position:absolute;top:5px;left:5px;background:rgba(16,24,38,.6);border-radius:4px;padding:1px 6px;font-size:10px}
+.ph .rm{position:absolute;top:4px;right:6px;cursor:pointer;font-size:15px;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.ph.add{background:#F8FBFE;border:1.5px dashed var(--blue);color:var(--blue);align-items:center;justify-content:center;cursor:pointer;font-size:12px;text-align:center}
+.optrow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+.optbox{border:1.5px solid var(--line-2);border-radius:9px;padding:12px 14px;cursor:pointer;background:#fff}
+.optbox.on{border-color:var(--orange);background:#FFFDF9}
+.optbox b{display:block;font-size:13.5px}
+.optbox span{font-size:12.5px;color:var(--ink-2)}
+.guide{background:#F7F9FC;border-radius:8px;padding:10px 14px;font-size:12.5px;color:var(--ink-2);line-height:1.7}
+.flowtag{font-size:11px;font-weight:700;padding:1px 7px;border-radius:4px;margin-left:6px}
+.ft-S{background:var(--green-soft);color:var(--green)}
+.ft-M{background:var(--amber-soft);color:var(--amber)}
+.ft-X{background:var(--red-soft);color:var(--red)}
+.pkgs3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.cmp{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+.cmp th,.cmp td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right}
+.cmp th:first-child,.cmp td:first-child{text-align:left}
+.cmp th{background:#F7F8FA;color:var(--ink-2);font-weight:600}
+.cmp td.on,.cmp th.on{background:#FFF8EE}
+.cmp tr.grp td{background:#F4F6F8;font-weight:700;text-align:left;color:var(--navy)}
+.tl{list-style:none;margin:0;padding:0}
+.tl li{display:flex;gap:10px;padding:6px 0;font-size:13px}
+.tl li .t{color:var(--ink-3);width:118px;flex-shrink:0}
+.tl li .d{width:9px;height:9px;border-radius:50%;background:var(--blue);margin-top:6px;flex-shrink:0}
+.flowmap{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;margin-bottom:14px}
+.flowmap span{padding:3px 10px;border-radius:12px;background:#F1F3F6;color:var(--ink-3)}
+.flowmap span.done{background:var(--green-soft);color:var(--green)}
+.flowmap span.cur{background:var(--orange);color:#fff;font-weight:600}
+.flowmap i{color:var(--ink-3);font-style:normal}
+.chg{background:#FFF6E5;border-radius:4px;padding:0 4px}
+
+</style>
+</head>
+<body>
+
+<div id="protobar">
+  <div class="pb-t">PROTOTYPE · <span>Combo MSME LPBank</span> trên iPTI</div>
+  <div class="pb-nav" id="pbnav"></div>
+  <div class="pb-right">
+    <div class="pb-role" id="rolesw">
+      <button data-role="CBKD" class="on">CBKD LPB</button>
+      <button data-role="CBPD">CBPD LPB</button>
+    </div>
+  </div>
+</div>
+<div class="app">
+  <div class="side">
+    <div class="logo">ipti</div>
+    <div class="sic" title="Trang chủ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
+    <div class="sic" id="navList" title="Quản lý đơn" onclick="go('s6')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></div>
+    <div class="sic on" id="navNew" title="Cấp đơn" onclick="go('s1')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 3v6c0 4.5-3.2 8.3-8 9-4.8-.7-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg></div>
+    <div class="grow"></div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="crumb" id="crumb"></div>
+        <div class="h1" id="pageTitle"></div>
+      </div>
+      <div class="user">
+        <div class="avatar"></div>
+        <div><span id="uName">lpb.hant</span> · <span id="uRole" style="color:#8D97A5">CBKD LPB</span></div>
+      </div>
+    </div>
+
+    <div class="content">
+
+<!-- ==================== MÀN 0 · ĐĂNG NHẬP iPTI ==================== -->
+<div class="screen" id="s0">
+  <div class="ip-wrap">
+    <div class="ip-form">
+      <div class="ip-logo">i<span>p</span>ti</div>
+      <h3>Đăng nhập</h3>
+      <div class="f" style="margin-bottom:14px"><label><span class="req">*</span>Tên đăng nhập</label><input class="ctl" value="hanghtl@lpbank.com.vn"></div>
+      <div class="f"><label><span class="req">*</span>Mật khẩu</label><input class="ctl" type="password" value="lpbank2026"></div>
+      <div class="ip-row"><label><input type="checkbox"> Ghi nhớ đăng nhập</label><a>Quên mật khẩu?</a></div>
+      <button class="ip-btn" onclick="go('s1')">Đăng nhập</button>
+      <div class="note" style="text-align:center;margin-top:14px">Dùng chung user LPBank như luồng CI · menu <b>Combo MSME</b> hiển thị theo thẻ quyền cấp đơn</div>
+    </div>
+    <div class="ip-hero">
+      <h4>Combo MSME</h4>
+      <p>Bảo hiểm Tài sản + Con người cho hộ kinh doanh, doanh nghiệp siêu nhỏ</p>
+      <svg viewBox="0 0 260 200" style="width:70%;margin-top:12px">
+        <rect x="40" y="70" width="110" height="100" rx="6" fill="#CFD6F5"/><path d="M30 76l65-46 65 46z" fill="#F0837E"/>
+        <rect x="80" y="120" width="30" height="50" fill="#7FB4F0"/><rect x="55" y="92" width="22" height="20" fill="#fff"/><rect x="113" y="92" width="22" height="20" fill="#fff"/>
+        <circle cx="200" cy="96" r="20" fill="#F3F4FB"/><rect x="180" y="120" width="40" height="50" rx="16" fill="#F3F4FB"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MÀN 1 · KHẢO SÁT & THẨM ĐỊNH ==================== -->
+<div class="screen" id="s1">
+  <div class="card">
+    <div class="steps" data-step="1"></div>
+    <div class="row">
+      <div class="col">
+        <div class="sec-t">Thông tin khai thác</div>
+        <div class="grid g3" style="margin-bottom:6px">
+          <div class="f"><label>Mã cán bộ giới thiệu</label><input class="ctl" id="refCode" placeholder="Nhập mã cán bộ giới thiệu"></div>
+          <div class="f"><label>Tên cán bộ giới thiệu</label><input class="ctl" id="refName" placeholder="Nhập tên cán bộ giới thiệu"></div>
+          <div class="f"><label>Đơn vị kinh doanh</label><input class="ctl" id="refBranch" placeholder="Nhập đơn vị kinh doanh"></div>
+        </div>
+
+        <div class="hr"></div>
+        <div class="sec-t">Thời hạn bảo hiểm</div>
+        <div class="grid g3" style="margin-bottom:6px">
+          <div class="f"><label><span class="req">*</span>Ngày bắt đầu</label>
+            <div style="display:flex;gap:8px"><input class="ctl" value="00:00" readonly style="width:70px;text-align:center"><input class="ctl" type="date" id="startDate"></div>
+            <div class="hint">Tối đa ngày cấp đơn + 30 ngày. Nếu thanh toán sau ngày này, ngày bắt đầu = ngày thanh toán.</div></div>
+          <div class="f"><label><span class="req">*</span>Ngày kết thúc</label>
+            <div style="display:flex;gap:8px"><input class="ctl" value="23:59" readonly style="width:70px;text-align:center"><input class="ctl" type="date" id="endDate" readonly></div>
+            <div class="hint">= Ngày bắt đầu + 1 năm (tự tính)</div></div>
+        </div>
+
+        <div class="hr"></div>
+        <div class="sec-t">Điều kiện cấp đơn</div>
+        <div id="kycCN"></div>
+        <div id="kycTS"></div>
+      </div>
+      <div class="feepanel" id="quotePanel"></div>
+    </div>
+    <div class="footbar">
+      <button class="btn btn-pri" onclick="go('s2')">Tiếp tục</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MÀN 2 · CHỌN GÓI ==================== -->
+<div class="screen" id="s2">
+  <div class="card">
+    <div class="steps" data-step="2"></div>
+    <div class="row">
+      <div class="col">
+        <div class="sec-t">Chọn gói combo</div>
+        <div class="grid g3">
+          <div class="f"><label><span class="req">*</span>Gói bảo hiểm</label>
+            <select class="ctl" id="pkgSel" onchange="S.pkg=this.value;render()"></select></div>
+        </div>
+        <div id="pkgSum"></div>
+        <a class="declink" style="display:inline-block;margin-top:14px;font-weight:500" onclick="openM('mBen')">Chi tiết quyền lợi</a>
+      </div>
+      <div class="feepanel"><h4>Phí bảo hiểm</h4><div class="feebody"></div></div>
+    </div>
+    <div class="footbar">
+      <button class="btn btn-gh" onclick="go('s1')">Quay lại</button>
+      <button class="btn btn-pri" onclick="go('s3')">Tiếp tục</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MÀN 3 · HỒ SƠ CHI TIẾT ==================== -->
+<div class="screen" id="s3">
+  <div class="card">
+    <div class="steps" data-step="3"></div>
+    <div class="row">
+      <div class="col">
+        <div class="sec-t">Bên mua bảo hiểm <span class="sub" style="font-weight:400;font-size:12.5px;color:var(--ink-3)">— dùng chung cho cả 2 nghiệp vụ</span></div>
+        <div class="grid g3" style="margin-bottom:14px">
+          <div class="f"><label><span class="req">*</span>Loại khách hàng</label>
+            <select class="ctl" id="buyerType" onchange="S.buyerType=this.value;render()">
+              <option value="ind">Cá nhân (đại diện HKD/MSME)</option><option value="org">Doanh nghiệp</option></select></div>
+        </div>
+        <div id="buyerForm"></div>
+
+        <div class="hr"></div>
+        <div class="blk">
+          <div class="blk-h"><span class="ic ts">🏠</span> Bảo hiểm Tài sản <span class="sub">Hỏa hoạn & RRĐB + Gián đoạn kinh doanh · TS.8</span></div>
+          <div class="blk-b" id="tsForm"></div>
+        </div>
+        <div class="blk">
+          <div class="blk-h"><span class="ic cn">👤</span> Bảo hiểm Con người <span class="sub">Bảo An tín dụng · CN.2.3</span></div>
+          <div class="blk-b" id="cnForm"></div>
+        </div>
+
+        <div class="hr"></div>
+        <div class="sec-t">Thanh toán & hóa đơn</div>
+        <div class="grid g3">
+          <div class="kv"><span class="k">Hình thức thanh toán</span><span class="v">Trả ngay 1 lần (KDTT.2)</span></div>
+          <div class="f"><label><span class="req">*</span>Email nhận hóa đơn</label><input class="ctl" id="invEmail" value="ketoan@minhlong.vn"></div>
+        </div>
+        <div class="hint" style="margin-top:10px">Đơn combo về core tách 2 HĐ (TS.8 + CN.2.3) nhưng xuất gộp 1 hóa đơn: lấy số GCN đầu listing, tách 2 dòng thuế — Không chịu thuế (CN) / Có thuế (TS).</div>
+      </div>
+      <div class="feepanel"><h4>Phí bảo hiểm</h4><div class="feebody"></div></div>
+    </div>
+    <div class="footbar">
+      <button class="btn btn-gh" onclick="go('s2')">Quay lại</button>
+      <button class="btn btn-pri" onclick="go('s4')">Tiếp tục</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MÀN 4 · REVIEW & XÁC NHẬN ==================== -->
+<div class="screen" id="s4">
+  <div class="card">
+    <div class="steps" data-step="4"></div>
+    <div class="row">
+      <div class="col">
+        <div style="font-size:16px;font-weight:700;margin-bottom:16px">Xem lại đơn</div>
+        <div id="reviewBox"></div>
+      </div>
+      <div class="feepanel"><h4>Phí bảo hiểm</h4><div class="feebody"></div></div>
+    </div>
+    <div class="footbar">
+      <button class="btn btn-gh" onclick="go('s3')">Quay lại</button>
+      <button class="btn btn-pri" onclick="confirmOrder()">Xác nhận</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MÀN 5 · THẨM ĐỊNH TÀI SẢN ==================== -->
+<div class="screen" id="s5">
+  <div class="card">
+    <div class="steps" data-step="5"></div>
+    <div class="row">
+      <div class="col" id="kycAdv"></div>
+      <div class="feepanel"><h4>Phí bảo hiểm</h4><div class="feebody"></div></div>
+    </div>
+    <div class="footbar">
+      <button class="btn btn-gh" onclick="go('s4')">Quay lại</button>
+      <button class="btn btn-pri" onclick="submitKyc()">Xác nhận</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MÀN 5b · KH TỰ CHỤP ẢNH QUA LINK ==================== -->
+<div class="screen" id="s1l">
+  <div class="card">
+    <div class="hint" style="margin-bottom:16px">Mô phỏng trang KH mở từ link CBKD gửi — <code>mycontract.pti.com.vn/thamdinh/<span class="oid"></span></code></div>
+    <div class="ec-wrap"><div class="phone">
+      <div class="ph-status"><span>09:18</span><span>▮▮▮ ⌁ ▰</span></div>
+      <div class="ph-nav"><span style="font-size:17px;cursor:pointer" onclick="go('s5')">‹</span> Cung cấp ảnh thẩm định tài sản</div>
+      <div class="ph-body" id="linkBody"></div>
+    </div></div>
+  </div>
+</div>
+
+
+<!-- ==================== MÀN 4b · BMBH XÁC NHẬN (E-CONSENT) ==================== -->
+<div class="screen" id="s5c">
+  <div class="card">
+    <div class="hint" style="margin-bottom:16px">Mô phỏng trang BMBH mở từ link SMS — <code>mycontract.pti.com.vn/confirm/<span class="oid"></span></code></div>
+    <div class="ec-wrap"><div class="phone">
+      <div class="ph-status"><span>09:18</span><span>▮▮▮ ⌁ ▰</span></div>
+      <div class="ph-nav"><span style="font-size:17px">‹</span> Xác nhận yêu cầu bảo hiểm</div>
+      <div class="ph-body" id="ecBody"></div>
+    </div></div>
+  </div>
+</div>
+
+
+<!-- ==================== MÀN 6 · QUẢN LÝ ĐƠN ==================== -->
+<div class="screen" id="s6">
+  <div class="card">
+    <div style="display:flex;align-items:center;margin-bottom:10px">
+      <div style="font-size:16px;font-weight:700" id="listTitle">Danh sách đơn</div>
+      <div style="margin-left:auto;display:flex;gap:9px" id="listActions"></div>
+    </div>
+    <div class="flowmap" id="flowmap"></div>
+    <div class="filters">
+      <div class="f"><label>Sản phẩm</label><select class="ctl"><option>Combo MSME — LPBank</option></select></div>
+      <div class="f"><label>CCCD NĐBH / MST</label><input class="ctl" placeholder="Lọc theo CCCD NĐBH"></div>
+      <div class="f"><label>Trạng thái đơn</label><select class="ctl"><option>Tất cả</option></select></div>
+      <div class="f"><label>Chi nhánh</label><select class="ctl"><option>LPBank — CN Hà Nội</option></select></div>
+    </div>
+    <div style="overflow:auto"><table class="tb" id="orderTable"></table></div>
+  </div>
+</div>
+
+<!-- ==================== MÀN 7 · QR THANH TOÁN ==================== -->
+<div class="screen" id="s7">
+  <div class="card">
+    <div style="border:1px solid var(--line);border-radius:9px;padding:26px;display:flex;gap:36px;flex-wrap:wrap">
+      <div style="flex:1;min-width:280px;text-align:center">
+        <div style="font-weight:600;margin-bottom:16px">Quét mã để thanh toán</div>
+        <div id="qrBox"></div>
+        <div style="margin-top:10px;font-size:12px;color:var(--ink-2);letter-spacing:.04em">VIETQR · napas 247</div>
+      </div>
+      <div style="width:1px;align-self:stretch;background:var(--line)"></div>
+      <div style="flex:1;min-width:320px">
+        <div style="font-weight:600;margin-bottom:18px">Hoặc chuyển khoản theo thông tin sau:</div>
+        <div style="display:flex;gap:14px;padding:5px 0"><span style="color:var(--ink-2);width:170px">TK chuyên thu PTI tại LPBank:</span><b>0388 6868 2026</b></div>
+        <div style="display:flex;gap:14px;padding:5px 0"><span style="color:var(--ink-2);width:170px">Đơn vị thụ hưởng:</span><b>Tổng Công ty CP Bảo hiểm Bưu Điện</b></div>
+        <div style="display:flex;gap:14px;padding:5px 0"><span style="color:var(--ink-2);width:170px">Tổng phí combo:</span><b class="totAmt">—</b></div>
+        <div style="display:flex;gap:14px;padding:5px 0"><span style="color:var(--ink-2);width:170px">Cú pháp chuyển tiền:</span><b style="letter-spacing:.06em" id="refNo"></b></div>
+        <div class="hint" style="margin-top:10px">Mã tham chiếu 11 ký số — khóa cứng, nhúng sẵn trong QR.</div>
+      </div>
+    </div>
+    <div class="warn" style="margin-top:18px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+      <div>Hệ thống gạch nợ tự động. Nếu KH chuyển sai cú pháp/sai số tiền, VCO/Kế toán xác nhận gạch nợ thủ công để cấp đơn.</div></div>
+    <div style="text-align:center;margin-top:22px;display:flex;gap:10px;justify-content:center" id="payBtns">
+      <button class="btn btn-gh" onclick="paid('VCO gạch nợ thủ công')">Mô phỏng: VCO gạch nợ thủ công</button>
+      <button class="btn btn-pri" onclick="paid('Gạch nợ tự động')">Mô phỏng: KH thanh toán thành công</button>
+    </div>
+    <div id="paidBox" style="display:none;margin-top:20px"></div>
+    <div class="footbar"><button class="btn btn-gh" onclick="go('s6')">Về danh sách đơn</button></div>
+  </div>
+</div>
+
+<!-- ==================== MÀN 8 · SĐBS BH TÀI SẢN ==================== -->
+<div class="screen" id="s8">
+  <div class="card">
+    <div class="tabchips">
+      <button class="tabchip on">SĐBS BH Tài sản</button>
+      <button class="tabchip" onclick="alert('SĐBS BH Con người xử lý như luồng SĐBS CI LPBank — không mô phỏng lại ở prototype này.')">SĐBS BH Con người</button>
+    </div>
+    <div id="sdbsBox"></div>
+    <div class="footbar">
+      <button class="btn btn-gh" onclick="go('s6')">Hủy</button>
+      <button class="btn btn-pri" onclick="submitSdbs()">Xác nhận SĐBS & gửi BMBH</button>
+    </div>
+  </div>
+</div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MODALS ==================== -->
+<div class="mask" id="mConfirm" style="display:none">
+  <div class="modal m-center" style="max-width:560px">
+    <div class="m-body" style="padding-top:30px" id="mcBody"></div>
+    <div class="optwrap">
+      <button class="btn btn-pri" style="width:100%;height:44px" onclick="closeM('mConfirm');openM('mOtp')">Nhập mã xác thực BMBH đọc cho CBKD</button>
+      <button class="btn btn-sec" style="width:100%;height:44px" onclick="closeM('mConfirm');go('s5c')">Mô phỏng BMBH mở link e-consent</button>
+      <a class="m-back" onclick="closeM('mConfirm');go('s6')">Về danh sách đơn ›</a>
+    </div>
+  </div>
+</div>
+
+<div class="mask" id="mOtp" style="display:none">
+  <div class="modal m-center" style="max-width:520px">
+    <div class="m-body" style="padding-top:30px">
+      <div class="m-title">Nhập mã xác thực</div>
+      <p class="m-text">BMBH đọc mã xác thực 6 số nhận qua SMS để CBKD nhập lên hệ thống.</p>
+      <div class="otp" style="justify-content:center;margin:20px 0 6px">
+        <input maxlength="1" oninput="otpHop(this)"><input maxlength="1" oninput="otpHop(this)"><input maxlength="1" oninput="otpHop(this)"><input maxlength="1" oninput="otpHop(this)"><input maxlength="1" oninput="otpHop(this)"><input maxlength="1" oninput="otpHop(this)">
+      </div>
+    </div>
+    <div class="modal-f">
+      <button class="btn btn-gh" onclick="closeM('mOtp');openM('mConfirm')">Quay lại</button>
+      <button class="btn btn-pri" onclick="closeM('mOtp');customerConfirmed('Mã xác thực (BMBH đọc cho CBKD)')">Xác nhận</button>
+    </div>
+  </div>
+</div>
+
+<div class="mask" id="mBen" style="display:none" onclick="if(event.target===this)closeM('mBen')">
+  <div class="modal" style="max-width:900px">
+    <div class="modal-h">Chi tiết quyền lợi <span class="x" onclick="closeM('mBen')">×</span></div>
+    <div class="modal-b" id="benTable"></div>
+    <div class="modal-f"><button class="btn btn-gh" onclick="closeM('mBen')">Đóng</button></div>
+  </div>
+</div>
+
+<div class="mask" id="mWait" style="display:none">
+  <div class="modal m-center" style="max-width:540px">
+    <div class="m-body" style="padding-top:30px">
+      <svg class="m-illu" viewBox="0 0 200 130" fill="none"><circle cx="100" cy="62" r="52" fill="#FDF3E7"/><circle cx="100" cy="62" r="34" fill="#F2942B"/><path d="M100 44v19l12 8" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="m-title">Đợi PTI thẩm định</div>
+      <p class="m-text" id="waitText"></p>
+      <div class="hint" style="justify-content:center;margin-top:12px">Thời gian 15 phút tính trong giờ làm việc 9:00–18:00, T2–T7 (không tính Chủ nhật, ngày lễ).</div>
+    </div>
+    <div class="optwrap">
+      <button class="btn btn-pri" style="width:100%;height:44px" onclick="closeM('mWait');go('s6')" id="waitBtn">Về danh sách đơn</button>
+      <button class="btn btn-sec" style="width:100%;height:44px" onclick="closeM('mWait');ptiPassed()">Mô phỏng: PTI thẩm định đạt</button>
+    </div>
+  </div>
+</div>
+
+<div class="mask" id="mDetail" style="display:none">
+  <div class="modal" style="max-width:940px">
+    <div class="modal-h"><span id="dtTitle">Chi tiết đơn</span><span class="x" onclick="closeM('mDetail')">×</span></div>
+    <div class="modal-b" id="dtBody"></div>
+    <div class="modal-f" id="dtFoot"></div>
+  </div>
+</div>
+
+<div class="mask" id="mNote" style="display:none">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-h" id="noteTitle">Ghi chú</div>
+    <div class="modal-b">
+      <div class="f"><label><span class="req">*</span><span id="noteLb">Nội dung</span></label>
+        <textarea class="ctl" id="noteTxt" style="height:90px;padding:9px 11px"></textarea></div>
+      <div class="hint" style="margin-top:8px" id="noteHint"></div>
+    </div>
+    <div class="modal-f"><button class="btn btn-gh" onclick="closeM('mNote')">Hủy</button><button class="btn btn-pri" id="noteOk">Gửi</button></div>
+  </div>
+</div>
+
+<div class="mask" id="mResult" style="display:none">
+  <div class="modal m-center" style="max-width:560px">
+    <div class="m-top"><span class="x" onclick="closeM('mResult')">×</span></div>
+    <div class="m-body" id="resBody"></div>
+    <div class="modal-f"><button class="btn btn-sec" onclick="closeM('mResult')">Đóng</button><button class="btn btn-pri" onclick="closeM('mResult');go('s6')">Về danh sách đơn</button></div>
+  </div>
+</div>
+
+<div class="mask" id="mDis" style="display:none" onclick="if(event.target===this)closeM('mDis')">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-h">Danh sách bệnh BATD <span class="x" onclick="closeM('mDis')">×</span></div>
+    <div class="modal-b"><ol style="margin:0;padding-left:20px;line-height:1.9;font-size:13.5px">
+      <li>Ung thư</li><li>Đái tháo đường giai đoạn III–IV</li><li>Suy thận</li><li>Suy thận giai đoạn cuối</li><li>Suy tủy</li><li>Đột quỵ</li><li>Xơ gan</li><li>Tai biến / nhồi máu não</li><li>Suy tim</li>
+      <li>Nghẽn mạch phổi <span class="hint" style="display:inline">(chỉ áp dụng NĐBH ≥ 60 tuổi)</span></li><li>Bệnh phổi tắc nghẽn mạn tính – COPD <span class="hint" style="display:inline">(≥ 60 tuổi)</span></li></ol></div>
+    <div class="modal-f"><button class="btn btn-gh" onclick="closeM('mDis')">Đóng</button></div>
+  </div>
+</div>
+
+
+<script>
+/* ============ DỮ LIỆU MẪU (rút gọn từ PPC TS MSME 21.09.2026 / PPC BATD LPB) ============
+   Prototype chỉ để demo luồng: rule hiển thị cảnh báo, không chặn nút Tiếp tục. */
+/* [mã PRO.FIRE001, tên ngành, luồng S=STP / M=MCV / X=Không cấp đơn, nhóm STBH đặc biệt] */
+const NGANH = [
+ ['C2.6','Trung tâm thương mại, cửa hàng','S'],
+ ['C2.7','Nhà hàng','S'],
+ ['C1.39','Cửa hàng bán sách và văn phòng phẩm','S'],
+ ['C1.2','Khách sạn, nhà nghỉ, Resort','S'],
+ ['C2.31','Cửa hàng ô tô xe máy','S'],
+ ['C3.36','Sản xuất hàng thủ công mỹ nghệ','M'],
+ ['C4.42','Xưởng sửa chữa xe','M'],
+ ['C4.59','Kho bánh kẹo, nước giải khát','M'],
+ ['C4.8','Chợ kiên cố, bán kiên cố','M','cho'],
+ ['C5.22','May quần áo các loại, xí nghiệp may','M','may'],
+ ['C5.20','Nhà máy giầy','M','may'],
+ ['C4.11','Kho biệt lập','M','may'],
+ ['C5.27','Cơ sở sản xuất hương, vàng mã','X'],
+ ['C4.10','Bar, sàn nhảy, phòng hoà nhạc','X'],
+ ['C5.4','Xưởng sản xuất đồ gỗ gia dụng','X']
+];
+const FLOW = {S:'STP', M:'MCV', X:'Không cấp đơn'};
+const PKGS = [
+ {id:'G1', name:'Cơ bản',    ts:1680000, cn:870000,  tsStbh:300e6,  cnStbh:300e6, may:100e6, cho:100e6, tn:190e6, yt:10e6},
+ {id:'G2', name:'Nâng cao',  ts:4480000, cn:1200000, tsStbh:800e6,  cnStbh:500e6, may:300e6, cho:100e6, tn:380e6, yt:20e6},
+ {id:'G3', name:'Toàn diện', ts:8400000, cn:2100000, tsStbh:1500e6, cnStbh:1000e6,may:500e6, cho:100e6, tn:870e6, yt:30e6}
+];
+const NEEDMAP = [
+ ['Trộm cắp có sử dụng vũ lực',[50e6,50e6,50e6]],
+ ['Chi phí dọn dẹp hiện trường',[50e6,100e6,150e6]],
+ ['Chi phí chữa cháy',[100e6,200e6,300e6]],
+ ['Chi phí thuê kiến trúc sư, thiết kế',[10e6,50e6,100e6]],
+ ['Gián đoạn kinh doanh sau tổn thất (khấu trừ 02 ngày)',[50e6,100e6,150e6]],
+ ['Chi phí thuê nhà (/tháng, tối đa 3 tháng)',[3e6,4e6,5e6]]
+];
+const HQ = [
+ 'NĐBH có đang bị bệnh tâm thần, động kinh, bệnh phong hoặc ung thư không?',
+ 'NĐBH có bị thương tật vĩnh viễn từ 80% trở lên không?',
+ 'Trong 3 năm qua, NĐBH có được chẩn đoán, điều trị hoặc phẫu thuật bệnh nào trong danh sách bệnh BATD không?'
+];
+const PHOTO_GUIDE = ['Toàn cảnh địa điểm','Rủi ro liền kề','Hệ thống điện, nước','Khu SX / kho / hàng hóa','PCCC & thiết bị'];
+const PH_COLORS = ['#5B8DB8','#7A9E7E','#B98B5E','#8C7AA9','#C0675B'];
+
+/* ============ STATE ============ */
+const S = {
+  role:'CBKD', screen:'s0', start:'', end:'',
+  oid:'MS2610280157', ref:'26102800157',
+  cn:{name:'Nguyễn Văn An', cccd:'001085012345', dob:'1985-03-12', sex:'Nam', phone:'0912 345 678', addr:'Số 12 Láng Hạ, Đống Đa, Hà Nội', ans:['Không','Không','Không']},
+  ts:{cust:'HKD', excl:'Không', struct:'Kiên cố', nganh:'C4.42', q:'', obj:[true,true,true], place:'Số 25 Nguyễn Trãi, Thanh Xuân, Hà Nội', ownerSelf:true},
+  kycMode:'cbkd', photos:[], pccc:false, linkSent:false,
+  pkg:'G2', buyerType:'ind', mortgage:'yes', loanNo:'HDTD/2026/LPB/00871', cnLoan:'no',
+  status:'Nháp', pay:'Chưa thanh toán', consent:'', ptiNote:'', log:[], gcn:null,
+  ecMode:'new', ec:'form', sdbs:null
+};
+const SCREENS = [
+  {id:'s0', label:'0 · Đăng nhập iPTI', title:'Đăng nhập iPTI', crumb:'Mô phỏng · <b>ipti.pti.com.vn</b>', fs:true},
+  {id:'s1', label:'1 · Khảo sát & thẩm định', kd:true},
+  {id:'s2', label:'2 · Chọn gói', kd:true},
+  {id:'s3', label:'3 · Hồ sơ chi tiết', kd:true},
+  {id:'s4', label:'4 · Review & xác nhận', kd:true},
+  {id:'s5', label:'5 · Thẩm định tài sản', kd:true},
+  {id:'s1l',label:'5b · KH tự chụp ảnh (link)', title:'KH cung cấp ảnh thẩm định', crumb:'Mô phỏng trang KH · <b>mycontract.pti.com.vn</b>'},
+  {id:'s5c',label:'6 · BMBH e-consent', title:'BMBH xác nhận e-consent', crumb:'Mô phỏng trang BMBH · <b>mycontract.pti.com.vn</b>'},
+  {id:'s6', label:'7 · Quản lý đơn / phê duyệt', title:'Quản lý đơn', crumb:'Trang chủ / <b>Quản lý đơn</b>'},
+  {id:'s7', label:'8 · QR thanh toán', title:'Thanh toán', crumb:'Trang chủ / Quản lý đơn / <b>Thanh toán</b>', kd:true},
+  {id:'s8', label:'SĐBS Tài sản', title:'Sửa đổi bổ sung — Combo MSME', crumb:'Trang chủ / Quản lý đơn / <b>Sửa đổi bổ sung</b>', kd:true, hidden:true}
+];
+const ROLES = {CBKD:['lpb.hant','CBKD LPB'], CBPD:['lpb.pdhn','CBPD LPB'], PTI:['pti.careby','Cán bộ PTI']};
+
+/* ============ HELPERS ============ */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const vnd=n=>Math.round(n).toLocaleString('vi-VN')+' đ';
+const tr=n=>n>=1e9?(n/1e9).toLocaleString('vi-VN')+' tỷ':(n/1e6).toLocaleString('vi-VN')+' triệu';
+const p2=n=>String(n).padStart(2,'0');
+const iso=d=>d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
+const dmy=d=>{const x=new Date(d); return p2(x.getDate())+'/'+p2(x.getMonth()+1)+'/'+x.getFullYear();};
+const now=()=>{const d=new Date(); return p2(d.getHours())+':'+p2(d.getMinutes())+' '+dmy(d);};
+function addDays(s,n){const d=new Date(s); d.setDate(d.getDate()+n); return iso(d);}
+function endOf(s){const d=new Date(s); d.setFullYear(d.getFullYear()+1); d.setDate(d.getDate()-1); return iso(d);}
+function ageAt(dob,at){const d=new Date(dob),a=new Date(at); let x=a.getFullYear()-d.getFullYear();
+  if(a.getMonth()<d.getMonth()||(a.getMonth()===d.getMonth()&&a.getDate()<d.getDate())) x--; return x;}
+const pkg=()=>PKGS.find(p=>p.id===S.pkg)||PKGS[0];
+const ng=()=>NGANH.find(n=>n[0]===S.ts.nganh);
+const flow=()=>ng()?ng()[2]:'S';
+const ftag=f=>`<span class="flowtag ft-${f}">${FLOW[f]}</span>`;
+function tsStbh(k){const n=ng(); if(n&&n[3]==='may') return k.may; if(n&&n[3]==='cho') return k.cho; return k.tsStbh;}
+function openM(id){$('#'+id).style.display='flex';}
+function closeM(id){$('#'+id).style.display='none';}
+function tog(el){el.parentElement.classList.toggle('closed');}
+const I_INFO='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>';
+const warn=(t,sub)=>`<div class="warn" style="margin-top:10px">${I_INFO}<div><b>${t}</b>${sub?'<br>'+sub:''}</div></div>`;
+const bad=(t,sub)=>`<div class="errbox" style="margin-top:10px">${I_INFO}<div><b>${t}</b>${sub?'<br>'+sub:''}</div></div>`;
+function log(actor,msg){S.log.push({t:now(),actor,msg});}
+function radio(name,val,opts,fn){return `<div class="radline">${opts.map(o=>`<label class="rad"><input type="radio" name="${name}" ${val===o?'checked':''} onchange="${fn}('${o}')"> ${o}</label>`).join('')}</div>`;}
+
+/* ============ NAV ============ */
+function go(id){
+  const sc=SCREENS.find(x=>x.id===id);
+  if(sc.kd && S.role!=='CBKD'){ alert('Phân quyền: chỉ CBKD LPB được truy cập màn hình cấp đơn / thanh toán / SĐBS.'); return; }
+  S.screen=id; $$('.screen').forEach(s=>s.classList.toggle('on',s.id===id));
+  document.querySelector('.app').classList.toggle('plain', !!sc.fs);
+  $('#pageTitle').textContent=sc.title||'Combo MSME — LPBank';
+  $('#crumb').innerHTML=sc.crumb||'Trang chủ / Cấp đơn / <b>Combo MSME — LPBank</b>';
+  $('#navList').classList.toggle('on', id==='s6'); $('#navNew').classList.toggle('on', id!=='s6');
+  $$('#pbnav button').forEach(b=>b.classList.toggle('on', b.dataset.s===id));
+  window.scrollTo(0,0); render();
+}
+function buildNav(){
+  $('#pbnav').innerHTML = SCREENS.filter(s=>!s.hidden).map(s=>`<button data-s="${s.id}">${s.label}</button>`).join('');
+  $$('#pbnav button').forEach(b=>b.onclick=()=>go(b.dataset.s));
+}
+function setRole(r){
+  S.role=r; $('#uName').textContent=ROLES[r][0]; $('#uRole').textContent=ROLES[r][1];
+  $$('#rolesw button').forEach(b=>b.classList.toggle('on',b.dataset.role===r));
+  $$('#pbnav button').forEach(b=>{const sc=SCREENS.find(x=>x.id===b.dataset.s); b.style.opacity=(r!=='CBKD'&&sc.kd)?.4:1;});
+  if(r!=='CBKD') go('s6'); else render();
+}
+const STEP_LB=['Khảo sát & thẩm định','Chọn gói','Hồ sơ chi tiết','Xác nhận','Thẩm định tài sản'];
+function renderSteps(){
+  $$('.steps').forEach(el=>{const n=+el.dataset.step;
+    el.innerHTML=STEP_LB.map((l,i)=>(i?`<div class="step-line ${i<n?'done':''}"></div>`:'')
+      +`<div class="step ${i+1===n?'on':i+1<n?'done':''}"><span class="n">${i+1<n?'✓':i+1}</span> ${l}</div>`).join('');});
+}
+
+/* ============ MÀN 1 — KYC con người + tài sản + thẩm định ============ */
+function setAns(i,v){S.cn.ans[i]=v;render();}
+function setTs(k,v){S.ts[k]=v;render();}
+function pickNganh(c){S.ts.nganh=c;S.ts.q='';render();}
+function renderS1(){
+  const c=S.cn, age=c.dob?ageAt(c.dob,S.start):null;
+  $('#kycCN').innerHTML = `<div class="blk">
+    <div class="blk-h"><span class="ic cn">👤</span> BH Con người <span class="sub">KYC người được bảo hiểm</span></div>
+    <div class="blk-b">
+      <div class="ocr">📷 Chụp hoặc tải ảnh CCCD để nhập thông tin tự động</div>
+      <div class="grid g3">
+        <div class="f"><label><span class="req">*</span>Họ và tên NĐBH</label><input class="ctl" value="${c.name}" onchange="S.cn.name=this.value;render()"></div>
+        <div class="f"><label><span class="req">*</span>CCCD/Căn cước</label><input class="ctl" value="${c.cccd}" onchange="S.cn.cccd=this.value;render()"></div>
+        <div class="f"><label><span class="req">*</span>Ngày sinh</label><input class="ctl" type="date" value="${c.dob}" onchange="S.cn.dob=this.value;render()">
+          ${age!==null?`<div class="hint">Tuổi bảo hiểm: ${age}</div>`:''}</div>
+      </div>
+      ${age!==null&&(age<18||age>70)?warn('Tuổi NĐBH ngoài dải 18–70','Không đủ điều kiện cấp đơn BH Con người → dừng cả combo.'):''}
+      <div class="okbox" style="margin-top:12px">✓ Đã kiểm tra tích tụ theo CCCD: chưa có GCN Combo MSME còn hiệu lực (giới hạn TN ≤ 870 triệu, ốm bệnh/thai sản ≤ 110 triệu/người).</div>
+      <div class="sec-t" style="font-size:13.5px;margin:18px 0 10px">Câu hỏi thẩm định sức khỏe</div>
+      ${HQ.map((q,i)=>`<div class="qcard"><div class="qt">Câu ${i+1}</div><div class="qq">${q}</div>
+        ${i===2?'<a class="declink" onclick="openM(\'mDis\')">Xem danh sách bệnh BATD ›</a>':''}
+        <div style="margin-top:8px">${radio('hq'+i,c.ans[i],['Có','Không'],'(v=>setAns('+i+',v))')}</div></div>`).join('')}
+      ${c.ans.includes('Có')?bad('Không đủ điều kiện tham gia BH Con người','Có ít nhất 1 câu trả lời “Có” → từ chối, combo không bán rời.'):''}
+    </div></div>`;
+
+  const t=S.ts, n=ng();
+  const q=t.q.toLowerCase();
+  const list=NGANH.filter(x=>!q||x[1].toLowerCase().includes(q)||x[0].toLowerCase().includes(q));
+  const objs=['Khung nhà','Máy móc thiết bị','Hàng hóa'];
+  $('#kycTS').innerHTML = `<div class="blk">
+    <div class="blk-h"><span class="ic ts">🏠</span> BH Tài sản <span class="sub">Ngành nghề & đối tượng bảo hiểm</span></div>
+    <div class="blk-b">
+      <div class="grid g3" style="margin-bottom:14px">
+        <div class="f"><label><span class="req">*</span>Loại khách hàng</label>
+          <select class="ctl" onchange="setTs('cust',this.value)">${['HKD','MSME','SME'].map(x=>`<option ${t.cust===x?'selected':''} value="${x}">${{HKD:'Hộ kinh doanh',MSME:'Doanh nghiệp siêu nhỏ (MSME)',SME:'SME'}[x]}</option>`).join('')}</select></div>
+      </div>
+      <div class="qcard"><div class="qt">Câu 1</div>
+        <div class="qq">Cơ sở có thuộc ngành nghề loại trừ không? (ngành gỗ; ngành sơn; ngành sử dụng mút xốp làm nguyên vật liệu; sản xuất hương, vàng mã; karaoke; cơ sở không đảm bảo an toàn PCCC / bị đình chỉ hoạt động)</div>
+        <div style="margin-top:8px">${radio('ex',t.excl,['Có','Không'],"(v=>setTs('excl',v))")}</div>
+        ${t.excl==='Có'?bad('Ngành nghề loại trừ — không cấp đơn','Dừng luồng cấp đơn combo.'):''}</div>
+      <div class="qcard"><div class="qt">Câu 2</div><div class="qq">Kết cấu công trình</div>
+        <div style="margin-top:8px">${radio('st',t.struct,['Kiên cố','Bán kiên cố','Không kiên cố'],"(v=>setTs('struct',v))")}</div>
+        ${t.struct==='Không kiên cố'?bad('Kết cấu không kiên cố — từ chối cấp đơn'):''}</div>
+      <div class="f" style="margin-top:6px"><label><span class="req">*</span>Ngành nghề sản xuất / kinh doanh (PRO.FIRE001)</label>
+        <input class="ctl" id="ngQ" placeholder="Tìm theo tên ngành nghề…" value="${t.q}" oninput="S.ts.q=this.value;renderS1();const e=$('#ngQ');e.focus();e.setSelectionRange(e.value.length,e.value.length)">
+        <div style="border:1px solid var(--line);border-radius:7px;max-height:190px;overflow:auto;margin-top:6px">
+          ${list.map(x=>`<div onclick="pickNganh('${x[0]}')" style="padding:7px 11px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--line);${x[0]===t.nganh?'background:#FFF8EE;font-weight:600':''}">
+            <span style="color:var(--ink-3);font-size:11.5px;margin-right:6px">${x[0]}</span>${x[1]}${ftag(x[2])}</div>`).join('')||'<div class="hint" style="padding:10px">Không tìm thấy</div>'}
+        </div></div>
+      ${n?`<div class="hint" style="margin-top:8px">Đã chọn: <b style="color:var(--ink)">${n[1]}</b> ${ftag(n[2])}</div>`:''}
+      ${n&&n[2]==='X'?bad('Ngành nghề thuộc danh sách Không cấp đơn'):''}
+      <div class="f" style="margin-top:14px"><label><span class="req">*</span>Đối tượng bảo hiểm <span style="font-weight:400;color:var(--ink-3)">(chọn ≥ 1, mặc định cả 3)</span></label>
+        <div class="radline">${objs.map((o,i)=>`<label class="chk"><input type="checkbox" ${t.obj[i]?'checked':''} onchange="S.ts.obj[${i}]=this.checked;render()"> ${o}</label>`).join('')}</div></div>
+
+    </div></div>`;
+
+  const k0=PKGS;
+  $('#quotePanel').innerHTML = `<h4>Phí tham khảo combo</h4>
+    ${k0.map(k=>`<div class="qp-r"><div class="qp-nm">${k.name}<span>TS ${vnd(k.ts)} + CN ${vnd(k.cn)}</span></div><div class="qp-fv">${vnd(k.ts+k.cn)}</div></div>`).join('')}
+    <div class="qp-note"><b>Lưu ý tư vấn khách hàng:</b><ol>
+      <li>Combo không bán rời: 1 nghiệp vụ không đạt điều kiện → dừng cả combo.</li>
+      <li>NĐBH tham gia nhiều HĐ: STBH tối đa 870 triệu/người cho Tử vong/TTVV do tai nạn và 110 triệu/người cho Tử vong/TTVV do ốm bệnh, thai sản.</li>
+      <li>Phí cố định theo gói, không phụ thuộc tuổi.</li></ol></div>`;
+}
+function addSample(src){const i=S.photos.length%5; S.photos.push({lb:PHOTO_GUIDE[i],c:PH_COLORS[i],src}); render();}
+function addFiles(files,src){[...files].forEach(f=>S.photos.push({lb:f.name.slice(0,18),url:URL.createObjectURL(f),c:'#888',src})); render();}
+
+/* ============ MÀN 5 — Thẩm định tài sản (KYC nâng cao) ============ */
+function renderAdv(){
+  const t=S.ts, n=ng();
+  const ptiBanner = S.status==='PTI yêu cầu bổ sung'
+    ? warn('PTI yêu cầu bổ sung hồ sơ thẩm định', `“${S.ptiNote}” — bổ sung ảnh (không xóa file cũ) rồi bấm Xác nhận để gửi PTI thẩm định lại.`) : '';
+  const photos=S.photos.map((p,i)=>`<div class="ph" style="${p.url?`background-image:url(${p.url})`:`background:${p.c}`}">
+      <span class="src">${p.src}</span><span class="rm" onclick="S.photos.splice(${i},1);render()">×</span>${p.lb}</div>`).join('');
+  $('#kycAdv').innerHTML = ptiBanner + `<div class="blk">
+    <div class="blk-h"><span class="ic ts">🏠</span> KYC thẩm định nâng cao tài sản <span class="sub">Ảnh/video hiện trạng & thiết bị PCCC</span></div>
+    <div class="blk-b">
+      <div class="grid g3" style="margin-bottom:14px">
+        <div class="kv"><span class="k">Ngành nghề</span><span class="v">${n?n[1]:'—'} ${n?ftag(n[2]):''}</span></div>
+        <div class="kv"><span class="k">Đối tượng bảo hiểm</span><span class="v">${['Khung nhà','Máy móc thiết bị','Hàng hóa'].filter((x,i)=>t.obj[i]).join(', ')||'—'}</span></div>
+        <div class="kv"><span class="k">Địa điểm bảo hiểm</span><span class="v">${t.place}</span></div>
+      </div>
+      <div class="guide">Hướng dẫn chụp/quay: ${PHOTO_GUIDE.map(x=>'• '+x).join('&nbsp;&nbsp; ')}</div>
+      <div style="margin-top:12px"><a style="font-weight:500" onclick="copyLink()">🔗 Sao chép link gửi KH tự chụp</a></div>
+      ${S.linkSent?`<div class="hint" style="margin-top:6px">Đã sao chép: <code>mycontract.pti.com.vn/thamdinh/${S.oid}</code> · hết hạn 23:59 ${dmy(new Date())} · <a onclick="go('s1l')">Mở trang KH (mô phỏng)</a></div>`:''}
+      <div style="font-size:13px;font-weight:600;margin-top:12px">Ảnh/video đối tượng & thiết bị PCCC <span class="req">*</span> <span style="font-weight:400;color:var(--ink-3)">— ${S.photos.length} file</span></div>
+      <div class="photos">${photos}
+        <label class="ph add">＋ Chụp / tải ảnh, video<input type="file" accept="image/*,video/*" multiple style="display:none" onchange="addFiles(this.files,'CBKD')"></label>
+        <div class="ph add" onclick="addSample('CBKD')">＋ Ảnh mẫu<br>(demo)</div></div>
+      ${S.photos.length?'':warn('Chưa có ảnh thẩm định','Cần ít nhất 1 ảnh/video trước khi gửi PTI thẩm định.')}
+      <div style="font-size:13px;font-weight:600;margin-top:16px">Biên bản kiểm tra / nghiệm thu PCCC <span style="font-weight:400;color:var(--ink-3)">(không bắt buộc)</span></div>
+      <div style="margin-top:8px">${S.pccc?`<span class="poschip">📄 BB_nghiem_thu_PCCC.pdf <span class="rm" onclick="S.pccc=false;render()">×</span></span>`
+        :`<button class="btn-doc" onclick="S.pccc=true;render()">＋ Tải lên biên bản</button>`}</div>
+    </div></div>`;
+}
+
+/* ============ MÀN 1b — trang KH tự chụp ============ */
+function renderLink(){
+  const kh=S.photos.filter(p=>p.src==='KH').length;
+  $('#linkBody').innerHTML = `<div class="ec-hero"><div class="ec-logo"><div class="mark">p<span>t</span>i</div><div class="w"><b>People</b><b>Trust</b><b>Insurance</b></div></div><div class="sub">THẨM ĐỊNH TÀI SẢN</div></div>
+    <div class="ec-sec">
+      <div class="ec-lead">Mã đơn <b>${S.oid}</b> · ${S.ts.place}</div>
+      <div class="guide" style="margin-top:10px">${PHOTO_GUIDE.map(x=>'• Ảnh '+x.toLowerCase()).join('<br>')}</div>
+      <div class="photos">${S.photos.map((p,i)=>p.src==='KH'?`<div class="ph" style="width:98px;height:74px;${p.url?`background-image:url(${p.url})`:`background:${p.c}`}"><span class="rm" onclick="S.photos.splice(${i},1);render()">×</span>${p.lb}</div>`:'').join('')}
+        <label class="ph add" style="width:98px;height:74px">📷 Chụp ảnh<input type="file" accept="image/*,video/*" capture="environment" multiple style="display:none" onchange="addFiles(this.files,'KH')"></label>
+        <div class="ph add" style="width:98px;height:74px" onclick="addSample('KH')">＋ Ảnh mẫu</div></div>
+      <div class="ec-deadline">Link có hiệu lực đến <b>23:59 ${dmy(new Date())}</b>. Quý khách có thể chụp lại hoặc xóa ảnh trước khi gửi.</div>
+      <div class="ec-cta"><button class="btn btn-pri" onclick="submitKyc('KH')">Xác nhận cung cấp ảnh</button></div>
+    </div>`;
+}
+
+
+/* ============ MÀN 2 — gói combo ============ */
+function renderPkgs(){
+  const n=ng();
+  $('#pkgSel').innerHTML = PKGS.map(k=>`<option value="${k.id}" ${S.pkg===k.id?'selected':''}>${k.name}</option>`).join('');
+  const sk=pkg();
+  $('#pkgSum').innerHTML = `<div class="grid g3" style="background:#F7F9FC;border-radius:8px;padding:14px 16px;margin-top:14px">
+      ${kv('STBH tài sản / năm / địa điểm',vnd(tsStbh(sk)))}${kv('STBH con người',vnd(sk.cnStbh))}${kv('Tổng phí combo','<span style="color:var(--orange)">'+vnd(sk.ts+sk.cn)+'</span>')}</div>
+    ${n&&n[3]?warn(`Ngành “${n[1]}” thuộc nhóm giảm STBH`, n[3]==='cho'?'STBH đối với Chợ: 100.000.000 đ/năm.':'Giày dép, may mặc, bông vải sợi, kho độc lập: 100 / 300 / 500 triệu theo gói.'):''}`;
+  const ci=PKGS.findIndex(k=>k.id===S.pkg);
+  const th=PKGS.map((k,i)=>`<th class="${i===ci?'on':''}">${k.name}</th>`).join('');
+  const row=(lb,vals)=>`<tr><td>${lb}</td>${vals.map((v,i)=>`<td class="${i===ci?'on':''}">${v}</td>`).join('')}</tr>`;
+  $('#benTable').innerHTML = `
+    <table class="cmp"><tr><th>Quyền lợi</th>${th}</tr>
+      <tr class="grp"><td colspan="4">BH Tài sản — Hỏa hoạn & RRĐB (QT 268) + Gián đoạn kinh doanh (QT 270)</td></tr>
+      ${row('STBH / năm / địa điểm (A–J: cháy, sét, nổ, máy bay rơi, gây rối, ác ý, động đất, tràn nước, đâm va)',PKGS.map(k=>tr(tsStbh(k))))}
+      ${row('G, H — Giông bão, lụt (tối đa 20% STBH/vụ và tổng số vụ)',PKGS.map(k=>tr(tsStbh(k)*.2)))}
+      ${S.ts.obj[2]?row('Hàng hóa (tối đa 50% STBH/vụ và tổng số vụ)',PKGS.map(k=>tr(tsStbh(k)*.5))):''}
+      ${NEEDMAP.map(([lb,v])=>row(lb,v.map(tr))).join('')}
+      ${row('Tạm ứng bồi thường',PKGS.map(()=>'≤ 50% tổn thất ước tính'))}
+      ${row('Mức khấu trừ',PKGS.map(()=>'5% tổn thất, min 10 tr/vụ'))}
+      <tr class="grp"><td colspan="4">BH Con người — Bảo An tín dụng (QT 01)</td></tr>
+      ${row('Tử vong, TTVV do tai nạn (trả khoán)',PKGS.map(k=>tr(k.tn)))}
+      ${row('Chi phí y tế do tai nạn (theo thực tế)',PKGS.map(k=>tr(k.yt)))}
+      ${row('Tử vong, TTTBVV do ốm bệnh, thai sản (trả khoán)',PKGS.map(()=>tr(100e6)))}
+      <tr class="grp"><td colspan="4">Phí bảo hiểm</td></tr>
+      ${row('Phí BH tài sản (gồm VAT)',PKGS.map(k=>vnd(k.ts)))}
+      ${row('Phí BH con người',PKGS.map(k=>vnd(k.cn)))}
+      ${row('<b>Tổng phí combo</b>',PKGS.map(k=>'<b>'+vnd(k.ts+k.cn)+'</b>'))}
+    </table>`;
+}
+function renderFees(){
+  const k=pkg(), tot=k.ts+k.cn;
+  const body=`<div class="fee-r"><span class="k">Gói</span><span class="v">${k.name}</span></div>
+    <div class="fee-r"><span class="k">Phí BH tài sản (gồm VAT)</span><span class="v">${vnd(k.ts)}</span></div>
+    <div class="fee-r sub"><span class="k">Trong đó VAT 10%</span><span class="v">${vnd(k.ts/11)}</span></div>
+    <div class="fee-r"><span class="k">Phí BH con người</span><span class="v">${vnd(k.cn)}</span></div>
+    <div class="fee-hr"></div>
+    <div class="fee-r tot"><span class="k">Tổng phí combo</span><span class="v">${vnd(tot)}</span></div>
+    <div class="fee-hr"></div>
+    <div class="fee-r"><span class="k">Luồng TS</span><span class="v">${ftag(flow())}</span></div>`;
+  $$('.feebody').forEach(el=>el.innerHTML=body);
+  $$('.totAmt').forEach(el=>el.textContent=vnd(tot));
+}
+
+/* ============ MÀN 3 — hồ sơ ============ */
+const fld=(lb,v,req,ro,on)=>`<div class="f"><label>${req?'<span class="req">*</span>':''}${lb}</label><input class="ctl" value="${v||''}" ${ro?'readonly':''} ${on?`onchange="${on}"`:''}></div>`;
+function renderS3(){
+  const c=S.cn;
+  $('#buyerType').value=S.buyerType;
+  $('#buyerForm').innerHTML = S.buyerType==='ind'
+    ? `<div class="grid g3">${fld('Họ và tên',c.name,1)}${fld('CCCD/Căn cước',c.cccd,1)}${fld('Ngày sinh (≥ 18 tuổi)',dmy(c.dob),1)}${fld('Số điện thoại',c.phone,1)}${fld('Địa chỉ',c.addr,1)}${fld('Email','an.nguyen@email.com')}</div>`
+    : `<div class="grid g3">${fld('Tên công ty','Công ty TNHH Thương mại Minh Long',1)}${fld('Mã số thuế','0101234567',1)}${fld('Người đại diện','Nguyễn Văn An',1)}${fld('Số điện thoại','0243 555 8899',1)}${fld('Địa chỉ','Số 25 Nguyễn Trãi, Thanh Xuân, Hà Nội',1)}${fld('Email','ketoan@minhlong.vn')}</div>`;
+
+  const t=S.ts, n=ng();
+  $('#tsForm').innerHTML = `
+    <div class="grid g3" style="margin-bottom:14px">
+      <div class="kv"><span class="k">Ngành nghề</span><span class="v">${n?n[1]:'—'} ${n?ftag(n[2]):''}</span></div>
+      <div class="kv"><span class="k">Đối tượng bảo hiểm</span><span class="v">${['Khung nhà','Máy móc thiết bị','Hàng hóa'].filter((x,i)=>t.obj[i]).join(', ')||'—'}</span></div>
+      <div class="kv"><span class="k">Kết cấu công trình</span><span class="v">${t.struct}</span></div>
+    </div>
+    <div class="grid g3">${fld('Tên cơ sở / doanh nghiệp','Hộ KD Sửa chữa xe An Phát',1)}${fld('MST','8012345678',1)}
+      <div class="f" style="grid-column:span 1"><label><span class="req">*</span>Địa điểm bảo hiểm</label><input class="ctl" value="${t.place}" onchange="S.ts.place=this.value"></div></div>
+    <div class="benwho-t" style="margin-top:16px">Người được bảo hiểm (tài sản)</div>
+    <div class="radline" style="margin-bottom:10px">
+      <label class="rad"><input type="radio" name="tsown" ${t.ownerSelf?'checked':''} onchange="S.ts.ownerSelf=true;render()"> Là bên mua bảo hiểm</label>
+      <label class="rad"><input type="radio" name="tsown" ${t.ownerSelf?'':'checked'} onchange="S.ts.ownerSelf=false;render()"> Khác bên mua bảo hiểm</label></div>
+    <div class="grid g3">${t.ownerSelf?fld('Họ và tên',c.name,1,1)+fld('CCCD/MST',c.cccd,1,1)+fld('Địa chỉ',c.addr,1,1):fld('Họ và tên / Tên DN','',1)+fld('CCCD/MST','',1)+fld('Địa chỉ','',1)}</div>
+    <div class="benwho-t" style="margin-top:16px">Người thụ hưởng (tài sản)</div>
+    <div class="f" style="margin-bottom:10px"><label><span class="req">*</span>Tài sản có thế chấp tại LPBank?</label>
+      ${radio('mort',S.mortgage==='yes'?'Có':'Không',['Có','Không'],"(v=>{S.mortgage=v==='Có'?'yes':'no';render()})")}</div>
+    ${S.mortgage==='yes'
+      ? `<div class="grid g3">${fld('Số hợp đồng vay',S.loanNo,1)}${fld('NTH 1','LPBank — CN Hà Nội (chi nhánh của CBKD)',1,1)}${fld('NTH 2 (nếu có)','')}</div>`
+      : `<div class="grid g3">${fld('Tên NTH (tùy chọn)',t.ownerSelf?c.name:'')}${fld('CCCD/MST',t.ownerSelf?c.cccd:'')}${fld('Tỷ lệ thụ hưởng (%)','100')}</div>
+         <div class="hint" style="margin-top:6px">Mặc định NTH = NĐBH · tối đa 3 NTH · tổng tỷ lệ = 100%.</div>`}
+    ${!t.ownerSelf?warn('BMBH không đồng thời là NĐBH','Việc chỉ định NTH phải có sự đồng ý bằng văn bản của NĐBH, thể hiện qua việc NĐBH ký xác nhận trên GYCBH.'):''}`;
+
+  $('#cnForm').innerHTML = `
+    <div class="grid g3" style="margin-bottom:14px">
+      <div class="kv"><span class="k">Họ và tên</span><span class="v">${c.name}</span></div>
+      <div class="kv"><span class="k">CCCD/Căn cước</span><span class="v">${c.cccd}</span></div>
+      <div class="kv"><span class="k">Ngày sinh</span><span class="v">${dmy(c.dob)}</span></div></div>
+    <div class="grid g3">
+      <div class="f"><label><span class="req">*</span>Giới tính</label><select class="ctl"><option>Nam</option><option>Nữ</option></select></div>
+      ${fld('Số điện thoại',c.phone,1)}${fld('Địa chỉ',c.addr,1)}</div>
+    <div class="benwho-t" style="margin-top:16px">Người thụ hưởng (con người)</div>
+    <div class="f" style="margin-bottom:10px"><label><span class="req">*</span>NĐBH có hợp đồng tín dụng tại LPBank?</label>
+      ${radio('cnl',S.cnLoan==='yes'?'Có':'Không',['Có','Không'],"(v=>{S.cnLoan=v==='Có'?'yes':'no';render()})")}</div>
+    ${S.cnLoan==='yes'
+      ? `<div class="grid g3">${fld('Số HĐ tín dụng',S.loanNo,1)}${fld('Dư nợ hiện tại (VNĐ)','200.000.000',1)}${fld('NTH 1','LPBank — theo dư nợ',1,1)}</div>
+         <div class="hint" style="margin-top:6px">STBH > dư nợ → phần còn lại trả cho NTH chỉ định (mặc định NĐBH / người thừa kế hợp pháp).</div>`
+      : `<div class="benself"><div><span class="k">NTH</span><span class="v">Là người được bảo hiểm</span></div><div><span class="k">Họ và tên</span><span class="v">${c.name}</span></div><div><span class="k">Tỷ lệ</span><span class="v">100%</span></div></div>`}`;
+}
+
+/* ============ REVIEW (màn 4 + chi tiết đơn) ============ */
+const kv=(k,v)=>`<div class="kv"><span class="k">${k}</span><span class="v">${v||'—'}</span></div>`;
+function acc(title, inner){return `<div class="acc"><div class="acc-h" onclick="tog(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg> ${title}</div><div class="acc-b">${inner}</div></div>`;}
+function photoStrip(){return `<div class="photos">${S.photos.map(p=>`<div class="ph" style="${p.url?`background-image:url(${p.url})`:`background:${p.c}`}"><span class="src">${p.src}</span>${p.lb}</div>`).join('')||'<span class="hint">Chưa có ảnh</span>'}</div>`;}
+function reviewHTML(){
+  const k=pkg(), n=ng(), c=S.cn;
+  return acc('Thông tin khai thác & thời hạn', `<div class="grid g4">${kv('Mã cán bộ giới thiệu',$('#refCode').value)}${kv('Đơn vị kinh doanh',$('#refBranch').value)}${kv('Thời hạn bảo hiểm','00:00 '+dmy(S.start)+' — 23:59 '+dmy(S.end))}${kv('Gói combo',k.name)}</div>`)
+   + acc('Bên mua bảo hiểm', `<div class="grid g4">${S.buyerType==='ind'?kv('Loại KH','Cá nhân (đại diện HKD)')+kv('Họ tên',c.name)+kv('CCCD',c.cccd)+kv('SĐT',c.phone):kv('Loại KH','Doanh nghiệp')+kv('Tên công ty','Công ty TNHH Thương mại Minh Long')+kv('MST','0101234567')+kv('SĐT','0243 555 8899')}</div>`)
+   + acc('BH Tài sản', `<div class="grid g4">${kv('Ngành nghề',(n?n[1]:'—')+(n?ftag(n[2]):''))}${kv('Kết cấu',S.ts.struct)}${kv('Đối tượng',['Khung nhà','Máy móc thiết bị','Hàng hóa'].filter((x,i)=>S.ts.obj[i]).join(', '))}${kv('STBH',vnd(tsStbh(k)))}
+       ${kv('Địa điểm BH',S.ts.place)}${kv('NĐBH',S.ts.ownerSelf?'Là BMBH':'Khác BMBH')}${kv('NTH',S.mortgage==='yes'?'NTH1: LPBank — CN Hà Nội (HĐ vay '+S.loanNo+')':'Theo chỉ định')}${kv('Phí (gồm VAT)',vnd(k.ts))}</div>
+       ${S.photos.length?'<div style="font-size:12.5px;color:var(--ink-3);margin-top:12px">Hồ sơ thẩm định</div>'+photoStrip():''}`)
+   + acc('BH Con người', `<div class="grid g4">${kv('NĐBH',c.name)}${kv('CCCD',c.cccd)}${kv('Ngày sinh',dmy(c.dob)+' · '+ageAt(c.dob,S.start)+' tuổi')}${kv('Sức khỏe','3/3 câu trả lời “Không”')}${kv('STBH',vnd(k.cnStbh))}${kv('NTH',S.cnLoan==='yes'?'LPBank theo dư nợ + NTH chỉ định':'NĐBH 100%')}${kv('Phí',vnd(k.cn))}</div>`)
+   + acc('Thanh toán & hóa đơn', `<div class="grid g4">${kv('Hình thức','Trả ngay 1 lần')}${kv('Tổng phí combo',vnd(k.ts+k.cn))}${kv('Email nhận hóa đơn',$('#invEmail').value)}${kv('Hóa đơn','Gộp 1 HĐ, 2 dòng thuế')}</div>`);
+}
+
+/* ============ E-CONSENT (cấp mới & SĐBS) ============ */
+function renderEc(){
+  const k=pkg(), sd=S.ecMode==='sdbs';
+  const hero=`<div class="ec-hero"><div class="ec-logo"><div class="mark">p<span>t</span>i</div><div class="w"><b>People</b><b>Trust</b><b>Insurance</b></div></div><div class="sub">BẢO HIỂM BƯU ĐIỆN</div></div>`;
+  const prod=`<div class="t">${sd?'Xác nhận sửa đổi bổ sung':'Xác nhận chương trình'}</div><div class="ec-prod">Combo MSME — Tài sản + Con người</div>`;
+  if(S.ec==='done'){ $('#ecBody').innerHTML=hero+`<div class="ec-sec">${prod}<div class="ec-ok">✓ Quý khách đã xác nhận ${sd?'yêu cầu SĐBS':'tham gia bảo hiểm'}. Cảm ơn Quý khách đã tin tưởng PTI.</div>
+      <div class="ec-cta"><button class="btn btn-gh" onclick="go('s6')">(Demo) Quay lại iPTI — danh sách đơn</button></div></div>`; return; }
+  if(S.ec==='reject'){ $('#ecBody').innerHTML=hero+`<div class="ec-sec">${prod}<div class="ec-bad">Quý khách đã từ chối. Đơn đã được hủy.</div>
+      <div class="ec-cta"><button class="btn btn-gh" onclick="go('s6')">(Demo) Quay lại iPTI</button></div></div>`; return; }
+  const doc = sd
+    ? `<div class="ec-doc"><div class="ec-doc-h">Giấy yêu cầu SĐBS</div><div class="ec-doc-b">
+        <div class="r"><span>Số GCN gốc (TS)</span><span>${S.gcn?S.gcn.ts:'—'}</span></div>
+        ${S.sdbs.changes.map(x=>`<div class="r"><span>${x[0]}</span><span>${x[2]}</span></div>`).join('')||'<div class="r"><span>Nội dung</span><span>Không thay đổi</span></div>'}
+        <div class="r"><span>Ngày hiệu lực SĐBS</span><span>${dmy(S.sdbs.date)}</span></div></div>
+        <div class="ec-doc-f"><a style="font-size:12px">GYCBH SĐBS + GCN dự thảo — PDF ›</a></div></div>`
+    : `<div class="ec-doc"><div class="ec-doc-h">Giấy yêu cầu bảo hiểm combo</div><div class="ec-doc-b">
+        <div class="r"><span>Mã đơn</span><span>${S.oid}</span></div>
+        <div class="r"><span>Bên mua bảo hiểm</span><span>${S.cn.name}</span></div>
+        <div class="r"><span>Gói</span><span>${k.name}</span></div>
+        <div class="r"><span>BH Tài sản</span><span>STBH ${vnd(tsStbh(k))}</span></div>
+        <div class="r"><span>Địa điểm</span><span>${S.ts.place}</span></div>
+        <div class="r"><span>BH Con người</span><span>STBH ${vnd(k.cnStbh)}</span></div>
+        <div class="r"><span>Thời hạn</span><span>${dmy(S.start)} – ${dmy(S.end)}</span></div>
+        <div class="r"><span>Tổng phí</span><span style="color:var(--orange)">${vnd(k.ts+k.cn)}</span></div></div>
+        <div class="ec-doc-f"><a style="font-size:12px">Xem GYCBH + GCN dự thảo — PDF ›</a></div></div>`;
+  $('#ecBody').innerHTML = hero+`<div class="ec-sec">${prod}<div class="ec-lead">Quý khách vui lòng đọc kỹ nội dung trước khi xác nhận:</div>${doc}
+    <label class="ec-term"><input type="checkbox" checked> <span>Tôi đã đọc, hiểu rõ và đồng ý với nội dung Giấy yêu cầu bảo hiểm và Chính sách bảo vệ dữ liệu cá nhân của PTI.</span></label>
+    <div class="ec-cta"><button class="btn btn-pri" onclick="S.ec='done';customerConfirmed('E-consent (KH bấm link)',true)">Xác nhận</button>
+      <button class="btn btn-gh" onclick="ecReject()">Từ chối</button></div></div>`;
+}
+
+
+/* ============ LUỒNG XỬ LÝ ĐƠN ============ */
+function illu(ok){
+  const c1=ok?'#E9F7EF':'#FDECEC', c2=ok?'#22A45D':'#D64545';
+  const g=ok?'<path d="M88 62l9 9 18-18" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>':'<path d="M90 52l20 20M110 52l-20 20" stroke="#fff" stroke-width="5" stroke-linecap="round"/>';
+  return `<svg class="m-illu" viewBox="0 0 200 130" fill="none"><circle cx="100" cy="62" r="52" fill="${c1}"/><circle cx="100" cy="62" r="34" fill="${c2}"/>${g}</svg>`;
+}
+function showResult(ok,title,sub){
+  $('#resBody').innerHTML = illu(ok)+`<div class="m-title">${title}</div>${sub?`<p class="m-text">${sub}</p>`:''}`;
+  openM('mResult');
+}
+function smsBox(sd){
+  return `<div style="background:#F4F6F8;border-radius:9px;padding:12px 14px;text-align:left;font-size:13px;margin-top:14px;color:var(--ink-2)">
+    <b style="color:var(--ink)">SMS gửi BMBH ${S.cn.phone}</b><br>Mã xác thực <b>482915</b> xác nhận Quý khách đồng ý ${sd?'sửa đổi bổ sung GCN '+(S.gcn?S.gcn.ts:''):'tham gia Combo MSME'} theo giấy yêu cầu bảo hiểm: <a>mycontract.pti.com.vn/confirm/${S.oid}</a></div>`;
+}
+function confirmOrder(){
+  log('CBKD LPB','Xác nhận thông tin đơn — chuyển bước thẩm định tài sản');
+  go('s5');
+}
+function copyLink(){
+  const u='https://mycontract.pti.com.vn/thamdinh/'+S.oid;
+  try{ navigator.clipboard && navigator.clipboard.writeText(u).catch(()=>{}); }catch(e){}
+  S.linkSent=true; log('CBKD LPB','Sao chép link gửi KH tự chụp ảnh thẩm định'); render();
+}
+function submitKyc(src){
+  const kh = src==='KH';
+  S.status='Chờ PTI thẩm định'; S.ptiNote='';
+  log(kh?'Khách hàng':'CBKD LPB', (kh?'Xác nhận cung cấp ảnh thẩm định qua link (':'Gửi hồ sơ thẩm định tài sản (')+S.photos.length+' file'+(S.pccc?' + biên bản PCCC':'')+') — chờ PTI thẩm định trong 15 phút');
+  $('#waitText').innerHTML = kh
+    ? `Quý khách đã cung cấp ảnh thẩm định cho đơn <b>${S.oid}</b>.<br>PTI sẽ thẩm định trong vòng <b>15 phút</b>, kết quả được báo tới cán bộ tư vấn LPBank.`
+    : `Hồ sơ thẩm định tài sản của đơn <b>${S.oid}</b> đã được gửi.<br>PTI sẽ thẩm định trong vòng <b>15 phút</b>, kết quả báo về CBKD qua thông báo và email.`;
+  $('#waitBtn').textContent = kh ? '(Demo) Về iPTI — danh sách đơn' : 'Về danh sách đơn';
+  render(); openM('mWait');
+}
+function ptiPassed(){
+  log('PTI','Thẩm định tài sản đạt');
+  S.ecMode='new'; S.ec='form'; S.status='Chờ KH xác nhận';
+  log('Hệ thống','Gửi SMS/e-consent cho BMBH');
+  $('#mcBody').innerHTML = illu(true)+`<div class="m-title">PTI đã thẩm định đạt</div>
+    <p class="m-text">Hệ thống đã gửi yêu cầu xác nhận cho BMBH. BMBH xác nhận bằng cách đọc mã xác thực cho CBKD hoặc bấm link e-consent.</p>${smsBox(false)}`;
+  openM('mConfirm'); render();
+}
+function customerConfirmed(how, fromEc){
+  if(S.ecMode==='sdbs'){
+    S.sdbs.st='SĐBS chờ LPB duyệt';
+    log('BMBH','Xác nhận SĐBS — '+how); log('Hệ thống','Chuyển yêu cầu SĐBS cho CBPD LPB phê duyệt');
+    if(!fromEc) showResult(true,'BMBH đã xác nhận SĐBS','Hệ thống đã chuyển yêu cầu SĐBS cho CBPD LPB phê duyệt.');
+  }else{
+    S.status='KH đã xác nhận'; S.consent=how; S.ptiNote='';
+    log('BMBH','Xác nhận tham gia — '+how);
+    if(!fromEc) showResult(true,'BMBH đã xác nhận thành công','Bước tiếp theo: CBKD bấm <b>Chuyển CBPD phê duyệt</b> tại Danh sách đơn.');
+  }
+  render();
+}
+function ecReject(){
+  S.ec='reject';
+  if(S.ecMode==='sdbs'){ S.sdbs.st='Hủy SĐBS'; log('BMBH','Từ chối SĐBS qua e-consent'); }
+  else { S.status='Hủy đơn'; log('BMBH','Từ chối qua e-consent'); }
+  render();
+}
+function toCBPD(){ S.status='Chờ LPB duyệt'; log('CBKD LPB','Chuyển đơn cho CBPD LPB phê duyệt'); render();
+  showResult(true,'Đã chuyển CBPD LPB phê duyệt','Đổi role sang <b>CBPD LPB</b> trên thanh prototype để phê duyệt.'); }
+function lpbApprove(){
+  closeM('mDetail');
+  if(S.sdbs && S.sdbs.st==='SĐBS chờ LPB duyệt'){
+    S.sdbs.st='Đã cấp GCN SĐBS'; S.sdbs.gcn=S.gcn.ts+'/SĐBS01';
+    log('CBPD LPB','Phê duyệt SĐBS'); log('Hệ thống','Issue GCN SĐBS '+S.sdbs.gcn+' — gửi Zalo › SMS › Email');
+    render(); showResult(true,'Đã phê duyệt SĐBS','GCN SĐBS <b>'+S.sdbs.gcn+'</b> đã phát hành và gửi BMBH (ưu tiên Zalo › SMS › Email).'); return;
+  }
+  log('CBPD LPB','Phê duyệt đơn');
+  S.status='Đã phê duyệt'; log('Hệ thống','Sinh QR thanh toán');
+  render(); showResult(true,'Đơn đã được phê duyệt','Đơn chuyển sang thanh toán QR. Đổi role về <b>CBKD LPB</b> để lấy mã QR cho KH.');
+}
+function askNote(title,label,hint,cb){
+  $('#noteTitle').textContent=title; $('#noteLb').textContent=label; $('#noteHint').textContent=hint||''; $('#noteTxt').value='';
+  $('#noteOk').onclick=()=>{ const v=$('#noteTxt').value.trim()||'(không ghi chú)'; closeM('mNote'); closeM('mDetail'); cb(v); };
+  openM('mNote');
+}
+function lpbReject(){ askNote('Từ chối phê duyệt','Lý do từ chối','Đơn bị hủy, noti/email cho CBKD.',v=>{
+  if(S.sdbs && S.sdbs.st==='SĐBS chờ LPB duyệt'){ S.sdbs.st='Hủy SĐBS'; log('CBPD LPB','Từ chối SĐBS: '+v); }
+  else { S.status='Hủy đơn'; log('CBPD LPB','Từ chối phê duyệt: '+v); }
+  render(); showResult(false,'Đã từ chối phê duyệt'); }); }
+function ptiApprove(){ closeM('mDetail'); S.status='Đã phê duyệt'; log('Cán bộ PTI','Đồng ý phê duyệt — sinh QR thanh toán'); render();
+  showResult(true,'PTI đã phê duyệt','Đơn chuyển sang thanh toán QR. Đổi role về <b>CBKD LPB</b> để lấy mã QR cho KH.'); }
+function ptiMore(){ askNote('Yêu cầu bổ sung / sửa đổi','Nội dung cần bổ sung','Noti + email cho CBKD. Sau khi bổ sung, BMBH phải xác nhận lại và CBPD LPB phê duyệt lại.',v=>{
+  S.status='PTI yêu cầu bổ sung'; S.ptiNote=v; log('Cán bộ PTI','Yêu cầu bổ sung: '+v); render();
+  showResult(true,'Đã gửi yêu cầu bổ sung cho CBKD'); }); }
+function ptiReject(){ askNote('Từ chối phê duyệt','Lý do từ chối (bắt buộc)','Dừng luồng, gửi noti/email cho CBKD.',v=>{
+  S.status='Hủy đơn'; log('Cán bộ PTI','Từ chối: '+v); render(); showResult(false,'PTI đã từ chối đơn'); }); }
+function paid(how){
+  const today=iso(new Date());
+  if(today>S.start){ log('Hệ thống','Ngày thanh toán > ngày bắt đầu → ngày bắt đầu = ngày thanh toán'); S.start=today; S.end=endOf(today); }
+  S.status='Hoàn thành'; S.pay='Đã thanh toán'; S.gcn={ts:'MSME/TS8/26/000157', cn:'MSME/CN23/26/000158'};
+  log('Hệ thống',how+' '+vnd(pkg().ts+pkg().cn)); log('Hệ thống','Issue 2 GCN (TS.8 + CN.2.3), đẩy core, gửi Zalo › SMS › Email cho BMBH; NĐBH xác nhận GYCBH');
+  $('#payBtns').style.display='none';
+  $('#paidBox').style.display='block';
+  $('#paidBox').innerHTML = `<div class="okbox">✓ Thanh toán thành công (${how}). Đã phát hành GCN BH Tài sản <b>${S.gcn.ts}</b> và GCN BH Con người <b>${S.gcn.cn}</b>.</div>`;
+  render();
+}
+
+/* ============ MÀN 6 — danh sách đơn ============ */
+const MOCK = [
+  {id:'MS2610280149', date:'28/10/2026', kh:'Trần Thị Hoa',   ng:'Nhà hàng', f:'S', st:'Hoàn thành', pay:'Đã thanh toán', amt:5680000},
+  {id:'MS2610280142', date:'28/10/2026', kh:'Lê Văn Phúc',    ng:'May quần áo các loại', f:'M', st:'Chờ PTI thẩm định', pay:'Chưa thanh toán', amt:2550000, sla:'còn 9 phút'},
+  {id:'MS2610270131', date:'27/10/2026', kh:'Phạm Minh Tuấn', ng:'Cửa hàng ô tô xe máy', f:'S', st:'Chờ LPB duyệt', pay:'Chưa thanh toán', amt:10500000},
+  {id:'MS2610270120', date:'27/10/2026', kh:'Đỗ Thu Hà',      ng:'Kho bánh kẹo, nước giải khát', f:'M', st:'Hủy đơn', pay:'Chưa thanh toán', amt:5680000},
+  {id:'MS2610260098', date:'26/10/2026', kh:'Ngô Quang Hải',  ng:'Trung tâm thương mại, cửa hàng', f:'S', st:'Chờ KH xác nhận', pay:'Chưa thanh toán', amt:2550000}
+];
+const TAGC={'Nháp':'t-gray','Chờ KH xác nhận':'t-amber','KH đã xác nhận':'t-blue','Chờ LPB duyệt':'t-navy','Chờ PTI duyệt':'t-amber','Chờ PTI thẩm định':'t-amber','PTI yêu cầu bổ sung':'t-red','Đã phê duyệt':'t-blue','Hoàn thành':'t-green','Hủy đơn':'t-red',
+  'SĐBS chờ KH xác nhận':'t-amber','SĐBS chờ LPB duyệt':'t-navy','Đã cấp GCN SĐBS':'t-green','Hủy SĐBS':'t-red'};
+function curRow(){ const n=ng(); return {id:S.oid, date:dmy(new Date()), kh:S.cn.name, ng:n?n[1]:'—', f:flow(), st:S.status, pay:S.pay, amt:pkg().ts+pkg().cn, cur:true, sla:'còn 14 phút'}; }
+function rowActs(o){
+  const b=(t,fn,cls)=>`<button class="btn btn-sm ${cls||'btn-gh'}" onclick="${fn}">${t}</button>`;
+  const view=b('Xem',o.cur||o.sd?"openDetail()":"alert('Đơn mẫu — thao tác trên dòng đơn đang demo (tô vàng).')");
+  if(!o.cur && !o.sd) return view;
+  if(o.sd){
+    if(S.role==='CBPD' && o.st==='SĐBS chờ LPB duyệt') return view+' '+b('Phê duyệt SĐBS','openDetail()','btn-pri');
+    if(S.role==='CBKD' && o.st==='SĐBS chờ KH xác nhận') return view+' '+b('Nhập mã xác thực',"openM('mOtp')",'btn-pri');
+    return view;
+  }
+  if(S.role==='CBPD') return view+(o.st==='Chờ LPB duyệt'?' '+b('Phê duyệt','openDetail()','btn-pri'):'');
+  const m={'Nháp':b('Tiếp tục cấp đơn',"go('s1')",'btn-pri'),
+    'Chờ KH xác nhận':b('Nhập mã xác thực',"openM('mOtp')",'btn-pri'),
+    'KH đã xác nhận':b('Chuyển CBPD phê duyệt','toCBPD()','btn-pri'),
+    'Chờ PTI thẩm định':b('Mô phỏng: PTI thẩm định đạt','ptiPassed()','btn-pri'),
+    'PTI yêu cầu bổ sung':b('Bổ sung hồ sơ',"go('s5')",'btn-pri'),
+    'Đã phê duyệt':b('Thanh toán QR',"go('s7')",'btn-pri'),
+    'Hoàn thành':''};
+  return view+(m[o.st]?' '+m[o.st]:'');
+}
+function renderFlowmap(){
+  const steps=['Nháp','PTI thẩm định TS','BMBH xác nhận','CBPD LPB duyệt','Thanh toán QR','Phát hành 2 GCN'];
+  const pay=steps.indexOf('Thanh toán QR');
+  const idx={'Nháp':0,'Chờ PTI thẩm định':1,'PTI yêu cầu bổ sung':1,'Chờ KH xác nhận':2,'KH đã xác nhận':3,'Chờ LPB duyệt':3,'Đã phê duyệt':pay,'Hoàn thành':steps.length}[S.status];
+  $('#flowmap').innerHTML = `<b style="margin-right:4px">Đơn ${S.oid}:</b>` + (S.status==='Hủy đơn' ? '<span class="cur" style="background:var(--red)">Hủy đơn</span>'
+    : steps.map((s,i)=>`<span class="${i<idx?'done':i===idx?'cur':''}">${s}</span>`).join('<i>›</i>'))
+    + (S.sdbs?` &nbsp;·&nbsp; <b>SĐBS:</b> <span class="cur">${S.sdbs.st}</span>`:'');
+}
+function renderOrders(){
+  const r=S.role;
+  $('#listTitle').textContent = r==='PTI'?'Đơn chờ PTI thẩm định (luồng MCV)':r==='CBPD'?'Danh sách đơn — CBPD LPB':'Danh sách đơn';
+  $('#listActions').innerHTML = r==='CBKD'?`<button class="btn btn-sm btn-pri" onclick="go('s1')">+ Tạo đơn mới</button>`:'';
+  let rows=[curRow()].concat(S.sdbs?[{id:S.oid+'-SĐBS', date:dmy(new Date()), kh:S.cn.name, ng:'SĐBS BH Tài sản', f:flow(), st:S.sdbs.st, pay:'—', amt:0, sd:true}]:[], MOCK);
+  if(r==='PTI') rows=rows.filter(o=>o.st==='Chờ PTI duyệt');
+  const sla = r!=='CBKD';
+  $('#orderTable').innerHTML = `<tr><th>Mã đơn</th><th>Ngày tạo</th><th>BMBH</th><th>Ngành nghề</th><th>Tổng phí</th><th>Trạng thái đơn</th><th>Thanh toán</th>${sla?'<th>Hạn duyệt</th>':''}<th>Hành động</th></tr>`
+   + (rows.map(o=>`<tr class="${o.cur||o.sd?'hl':''}"><td class="id">${o.id}</td><td>${o.date}</td><td>${o.kh}</td><td>${o.ng} ${ftag(o.f)}</td>
+      <td>${o.amt?vnd(o.amt):'—'}</td><td><span class="tag ${TAGC[o.st]||'t-gray'}">${o.st}</span></td>
+      <td><span class="tag ${o.pay==='Đã thanh toán'?'t-green':'t-gray'}">${o.pay}</span></td>
+      ${sla?`<td>${(r==='PTI'&&o.st==='Chờ PTI duyệt')?`<span class="tag t-amber">${o.sla}</span>`:(r==='CBPD'&&/LPB duyệt/.test(o.st))?'<span class="tag t-amber">23:59 hôm nay</span>':'—'}</td>`:''}
+      <td style="white-space:nowrap">${rowActs(o)}</td></tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--ink-3);padding:30px">Không có đơn chờ thẩm định</td></tr>');
+  renderFlowmap();
+}
+function openDetail(){
+  const sdPending = S.sdbs && /SĐBS chờ LPB/.test(S.sdbs.st) && S.role==='CBPD';
+  $('#dtTitle').innerHTML = `Chi tiết đơn ${S.oid} <span class="tag ${TAGC[S.status]}" style="margin-left:8px">${S.status}</span>`;
+  const top = S.role==='PTI' && S.status==='Chờ PTI duyệt'
+    ? warn('Quy định phê duyệt: SLA 15 phút','Tính trong giờ làm việc 9:00–18:00, T2–T7 (không tính Chủ nhật, ngày lễ). Ngành nghề: '+ng()[1]+' — luồng MCV.')+'<div style="height:12px"></div>' : '';
+  const sd = S.sdbs ? acc('Yêu cầu SĐBS BH Tài sản — '+S.sdbs.st, `<table class="cmp"><tr><th>Trường</th><th>Giá trị cũ</th><th>Giá trị mới</th></tr>
+      ${S.sdbs.changes.map(c=>`<tr><td>${c[0]}</td><td>${c[1]}</td><td><span class="chg">${c[2]}</span></td></tr>`).join('')||'<tr><td colspan="3">Không có thay đổi</td></tr>'}</table>
+      <div class="hint" style="margin-top:8px">Ngày hiệu lực SĐBS: ${dmy(S.sdbs.date)} · CCCD gốc đã đối chiếu · không thẩm định lại tài sản.</div>`) : '';
+  const gcn = S.gcn ? acc('Giấy chứng nhận & nhắc tái tục', `<div class="grid g4">${kv('GCN BH Tài sản',S.gcn.ts)}${kv('GCN BH Con người',S.gcn.cn)}${kv('Nhắc BMBH (t − 15)',dmy(addDays(S.end,-15)))}${kv('Nhắc client careby (t − 30)',dmy(addDays(S.end,-30)))}</div>`) : '';
+  $('#dtBody').innerHTML = top + (sdPending?sd:'') + reviewHTML() + (sdPending?'':sd) + gcn
+    + acc('Lịch sử xử lý', `<ul class="tl">${S.log.map(l=>`<li><span class="t">${l.t}</span><span class="d"></span><span><b>${l.actor}</b> — ${l.msg}</span></li>`).join('')||'<li>Chưa có</li>'}</ul>`);
+  const f = sdPending || (S.role==='CBPD' && S.status==='Chờ LPB duyệt')
+      ? `<button class="btn btn-dan" onclick="lpbReject()">Từ chối</button><button class="btn btn-pri" onclick="lpbApprove()">Phê duyệt</button>`
+    : (S.role==='PTI' && S.status==='Chờ PTI duyệt')
+      ? `<button class="btn btn-dan" onclick="ptiReject()">Từ chối</button><button class="btn btn-sec" onclick="ptiMore()">Yêu cầu bổ sung / sửa đổi</button><button class="btn btn-pri" onclick="ptiApprove()">Đồng ý phê duyệt</button>` : '';
+  $('#dtFoot').innerHTML = `<button class="btn btn-gh" onclick="closeM('mDetail')">Đóng</button>`+f;
+  openM('mDetail');
+}
+
+/* ============ MÀN 8 — SĐBS BH Tài sản ============ */
+const SD_FIELDS = [
+  ['BMBH — Họ và tên', ()=>S.cn.name],
+  ['BMBH — Số điện thoại', ()=>S.cn.phone],
+  ['BMBH — Địa chỉ', ()=>S.cn.addr],
+  ['NĐBH tài sản — Họ tên / Tên DN', ()=>S.cn.name],
+  ['NĐBH tài sản — CCCD/MST', ()=>S.cn.cccd],
+  ['Đối tượng — Địa điểm bảo hiểm', ()=>S.ts.place, 'loc'],
+  ['NTH — Số hợp đồng vay', ()=>S.loanNo]
+];
+S.sd = {vals:{}, cccd:'', date:'', img:false};
+function renderSdbs(){
+  if(!S.sd.date) S.sd.date=iso(new Date());
+  const paidOrder = S.pay==='Đã thanh toán', mcv=flow()==='M';
+  $('#sdbsBox').innerHTML = `
+    <div class="grid g4" style="background:#F7F8FA;border-radius:8px;padding:14px;margin-bottom:18px">
+      ${kv('Mã đơn',S.oid)}${kv('GCN BH Tài sản',S.gcn?S.gcn.ts:'Chưa cấp')}${kv('Thời hạn',dmy(S.start)+' – '+dmy(S.end))}${kv('Trạng thái',S.status+' · '+S.pay)}</div>
+    <div class="sec-t">Bước 1 · Thông tin bắt buộc</div>
+    <div class="grid g3">
+      <div class="f"><label><span class="req">*</span>CCCD/Căn cước gốc của KH</label><input class="ctl" placeholder="Nhập để đối chiếu" value="${S.sd.cccd}" onchange="S.sd.cccd=this.value"></div>
+      <div class="f"><label><span class="req">*</span>Ngày cấp SĐBS</label><input class="ctl" type="date" value="${S.sd.date}" onchange="S.sd.date=this.value"><div class="hint">Mặc định = ngày nhập</div></div>
+      ${paidOrder?`<div class="f"><label><span class="req">*</span>Ảnh CCCD BMBH/NĐBH <span style="font-weight:400;color:var(--ink-3)">(đơn đã thanh toán)</span></label>
+        ${S.sd.img?`<span class="poschip">🪪 CCCD_BMBH.jpg <span class="rm" onclick="S.sd.img=false;render()">×</span></span>`:`<button class="btn-doc" onclick="S.sd.img=true;render()">＋ Chụp / tải ảnh CCCD</button>`}</div>`:''}
+    </div>
+    <div class="sec-t">Bước 2 · Nội dung sửa đổi</div>
+    <div class="hint" style="margin-bottom:10px">Sau thời hạn BH chỉ sửa sai sót lúc cấp đơn (luồng STP). Đổi ngành nghề sang MCV, đổi đối tượng, thời hạn, gói → xử lý thủ công (hủy đơn cũ, cấp mới). BMBH dùng chung 2 nghiệp vụ → sửa BMBH sẽ đồng bộ sang GCN BH Con người.</div>
+    <table class="cmp"><tr><th style="width:30%">Trường thông tin</th><th style="text-align:left">Giá trị hiện tại</th><th style="text-align:left">Giá trị mới</th></tr>
+      ${SD_FIELDS.map(([lb,get,k],i)=>{ const lock=k==='loc'&&mcv;
+        return `<tr><td>${lb}</td><td style="text-align:left">${get()}</td><td style="text-align:left">
+          <input class="ctl" style="height:32px" ${lock?'disabled title="Ngành MCV — đổi địa điểm xử lý thủ công"':''} value="${S.sd.vals[i]!==undefined?S.sd.vals[i]:get()}" onchange="S.sd.vals[${i}]=this.value">
+          ${lock?'<div class="hint">Ngành MCV — đổi địa điểm phải xử lý thủ công</div>':''}</td></tr>`;}).join('')}
+    </table>
+    <div class="okbox" style="margin-top:14px">Không cần thẩm định lại tài sản. Sau khi xác nhận: SMS cho BMBH → BMBH xác nhận (mã / e-consent kèm GYCBH có số GCN gốc + GCN dự thảo) → CBPD LPB phê duyệt → phát hành GCN SĐBS.</div>`;
+}
+function submitSdbs(){
+  const changes = SD_FIELDS.map(([lb,get],i)=>[lb,get(),S.sd.vals[i]]).filter(c=>c[2]!==undefined && c[2]!==c[1]);
+  S.sdbs = {st:'SĐBS chờ KH xác nhận', changes, date:S.sd.date};
+  S.ecMode='sdbs'; S.ec='form';
+  log('CBKD LPB','Lập yêu cầu SĐBS BH Tài sản ('+changes.length+' thay đổi) — gửi SMS cho BMBH');
+  $('#mcBody').innerHTML = illu(true)+`<div class="m-title">Đã gửi yêu cầu xác nhận SĐBS</div>
+    <p class="m-text">BMBH xác nhận qua mã xác thực hoặc e-consent (GYCBH có số GCN gốc + GCN dự thảo).</p>${smsBox(true)}`;
+  openM('mConfirm'); render();
+}
+
+/* ============ QR giả lập ============ */
+function drawQR(){
+  const n=29, c=6; let r=[], seed=157;
+  const rnd=()=>{seed=(seed*1103515245+12345)%2147483648; return seed/2147483648;};
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++){
+    if((x<7&&y<7)||(x>=n-7&&y<7)||(x<7&&y>=n-7)){ const ax=x<7?x:x-(n-7), ay=y<7?y:y-(n-7);
+      if((ax===0||ax===6||ay===0||ay===6)||(ax>=2&&ax<=4&&ay>=2&&ay<=4)) r.push(`<rect x="${x*c}" y="${y*c}" width="${c}" height="${c}"/>`); continue; }
+    if(rnd()>0.5) r.push(`<rect x="${x*c}" y="${y*c}" width="${c}" height="${c}"/>`);
+  }
+  $('#qrBox').innerHTML=`<svg width="${n*c}" height="${n*c}" style="background:#fff;border:1px solid var(--line);border-radius:6px;padding:6px;box-sizing:content-box"><g fill="#101826">${r.join('')}</g></svg>`;
+}
+
+/* ============ RENDER / INIT ============ */
+function otpHop(el){ el.value=el.value.replace(/\D/g,'').slice(0,1); if(el.value&&el.nextElementSibling) el.nextElementSibling.focus(); }
+function render(){
+  renderSteps(); renderS1(); renderAdv(); renderLink(); renderPkgs(); renderFees(); renderS3();
+  $('#reviewBox').innerHTML=reviewHTML(); renderEc(); renderOrders(); renderSdbs();
+  $$('.oid').forEach(e=>e.textContent=S.oid); $('#refNo').textContent=S.ref;
+}
+buildNav();
+$$('#rolesw button').forEach(b=>b.onclick=()=>setRole(b.dataset.role));
+S.start=iso(new Date()); S.end=endOf(S.start);
+$('#startDate').value=S.start; $('#startDate').min=S.start; $('#startDate').max=addDays(S.start,30); $('#endDate').value=S.end;
+$('#startDate').onchange=e=>{S.start=e.target.value; S.end=endOf(S.start); $('#endDate').value=S.end; render();};
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') $$('.mask').forEach(m=>m.style.display='none'); });
+function fitBar(){ const b=$('#protobar'); document.documentElement.style.setProperty('--pbh', b.offsetHeight+'px'); }
+fitBar(); window.addEventListener('resize', fitBar);
+drawQR(); go('s0');
+</script>
+</body>
+</html>
